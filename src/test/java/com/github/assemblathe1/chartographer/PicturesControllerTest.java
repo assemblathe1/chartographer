@@ -49,6 +49,7 @@ public class PicturesControllerTest {
     private PicturesRepository picturesRepository;
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
+
     private String getTestFile(String fileName) {
         return getClass().getClassLoader().getResource("pictures/" + fileName).getPath();
     }
