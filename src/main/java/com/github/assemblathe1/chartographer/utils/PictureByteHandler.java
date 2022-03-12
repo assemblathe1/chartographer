@@ -64,7 +64,7 @@ public class PictureByteHandler {
         fileOutputStream.close();
     }
 
-    public void restorePictureFragment(Integer x, Integer y, Integer width, Integer height, MultipartFile pictureFragment, Picture picture) throws IOException {
+    public void savePictureFragment(Integer x, Integer y, Integer width, Integer height, MultipartFile pictureFragment, Picture picture) throws IOException {
         File originalImage = new File(picture.getUrl());
         if (!originalImage.exists()) throw new WritingToDiskException("Internal Server Error");
         int startOffsetInputStream = 54;

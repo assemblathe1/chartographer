@@ -4,7 +4,6 @@ import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.repositories.PicturesRepository;
 import com.github.assemblathe1.chartographer.services.PicturesService;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +29,8 @@ import java.util.Random;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -48,6 +48,8 @@ public class PicturesServiceTest {
 
     Picture picture = new Picture();
     long pictureByteSize;
+    int restoringFragmentWidth = 31;
+    int restoringFragmentHeight = 26;
 
     @PostConstruct
     public void postConstruct() {
@@ -87,35 +89,53 @@ public class PicturesServiceTest {
     }
 
     @Test
-    public void givenId_whenSaveMultipartPictureFragment_thenStatus200() throws Exception {
-        File source = new File(getTestFile("whenSaveMultipartPicture.bmp"));
-        File copied = new File(tmpdir + "whenSaveMultipartPicture.bmp");
-        picture.setUrl(copied.getAbsolutePath());
-        Files.deleteIfExists(copied.toPath());
-        assertThat(copied).doesNotExist();
-        assertThat(source).exists().hasSize(pictureByteSize);
-        FileUtils.copyFile(source, copied);
-        assertThat(copied).exists();
-        assertThat(Files.readAllLines(source.toPath()).equals(Files.readAllLines(copied.toPath())));
-        FileInputStream fileInputStream = new FileInputStream(getTestFile("whenSaveMultipartPictureFragment.bmp"));
+    public void savePictureFragmentTest() throws Exception {
+        // Приверяем и копируем папирус в папку temp
+        File sourcePicture = new File(getTestFile("whenSaveMultipartPicture.bmp"));
+        File copiedPicture = new File(tmpdir + "whenSaveMultipartPicture.bmp");
+        picture.setUrl(copiedPicture.getAbsolutePath());
+        Files.deleteIfExists(copiedPicture.toPath());
+        assertThat(copiedPicture).doesNotExist();
+        assertThat(sourcePicture).exists().hasSize(pictureByteSize);
+        FileUtils.copyFile(sourcePicture, copiedPicture);
+        assertThat(copiedPicture).exists();
+        assertThat(Files.readAllLines(sourcePicture.toPath()).equals(Files.readAllLines(copiedPicture.toPath())));
+        given(picturesRepository.findById(Mockito.any())).willReturn(Optional.of(picture));
+
+        // Проверка корректности воссстанавливаемого фрагмента изображения
+        File restoringFragment = new File(getTestFile("whenSaveMultipartPictureFragment.bmp"));
+        FileInputStream fileInputStream = new FileInputStream(restoringFragment);
         MockMultipartFile pictureFragment = new MockMultipartFile("file", "whenSaveMultipartPictureFragment.bmp",
                 String.valueOf(MediaType.valueOf("image/bmp")), fileInputStream);
+        BufferedImage bufferedFragment = ImageIO.read(restoringFragment);
+        assertEquals(bufferedFragment.getWidth(), restoringFragmentWidth);
+        assertEquals(bufferedFragment.getHeight(), restoringFragmentHeight);
+        fileInputStream.close();
 
-        int restoringPicturePartWidth = 31;
-        int restoringPicturePartHeight = 26;
+        // Сохранение фрагмента с нужными координатами х и у
+        int x = 0;
+        int y = 0;
+        picturesService.savePictureFragment(picture.getId().toString(), x, y, restoringFragmentWidth, restoringFragmentHeight, pictureFragment);
 
-        given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        mvc
-                .perform(multipart("/chartas/{id}/", picture.getId())
-                        .file(pictureFragment)
-                        .param("x", String.valueOf(0))
-                        .param("y", String.valueOf(0))
-                        .param("width", String.valueOf(restoringPicturePartWidth))
-                        .param("height", String.valueOf(restoringPicturePartHeight)
-                        )
-                ).andDo(print())
-                .andExpect(status().isOk());
-        assertThat(copied).exists();
+        // Проверка корректности папируса после восстановления фрагмента
+        assertThat(copiedPicture).exists().hasSize(pictureByteSize);
+        BufferedImage bufferedPicture = ImageIO.read(copiedPicture);
+        assertEquals(bufferedPicture.getWidth(), picture.getWidth());
+        assertEquals(bufferedPicture.getHeight(), picture.getHeight());
+        for (int i = 0; i < 10; i++) {
+            int testColorX = new Random().ints(1, restoringFragmentWidth - 1).findFirst().getAsInt();
+            int testColorY = new Random().ints(1, restoringFragmentHeight - 1).findFirst().getAsInt();
+            assertEquals(
+                    bufferedPicture.getRGB(
+                            testColorX + x,
+                            testColorY + y
+                    ),
+                    bufferedFragment.getRGB(
+                            testColorX,
+                            testColorY
+                    )
+            );
+        }
     }
 
     @Test

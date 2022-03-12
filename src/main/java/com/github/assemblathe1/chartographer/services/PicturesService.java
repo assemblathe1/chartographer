@@ -47,7 +47,7 @@ public class PicturesService {
         Picture picture = findPictureById(id);
         pictureValidator.validate(x, y, width, height, 20000, 50000, picture.getWidth(), picture.getHeight());
         try {
-            pictureByteHandler.restorePictureFragment(x, y, width, height, pictureFragment, picture);
+            pictureByteHandler.savePictureFragment(x, y, width, height, pictureFragment, picture);
         } catch (IOException e) {
             throw new WritingToDiskException("Internal Server Error");
         }

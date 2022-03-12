@@ -50,6 +50,8 @@ public class PicturesControllerStatusOkTests {
     private PictureByteHandler pictureByteHandler;
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
+    private final int restoringPictureFragmentWidth = 31;
+    private final int restoringPictureFragmentHeight = 26;
 
     private String getTestFile(String fileName) {
         return getClass().getClassLoader().getResource("pictures/" + fileName).getPath();
@@ -71,34 +73,23 @@ public class PicturesControllerStatusOkTests {
 
     @Test
     public void givenId_whenSaveMultipartPictureFragment_thenStatus200() throws Exception {
-        File source = new File(getTestFile("whenSaveMultipartPicture.bmp"));
-        File copied = new File(tmpdir + "whenSaveMultipartPicture.bmp");
-        picture.setUrl(copied.getAbsolutePath());
-        Files.deleteIfExists(copied.toPath());
-        assertThat(copied).doesNotExist();
-        assertThat(source).exists().hasSize(pictureByteSize);
-        FileUtils.copyFile(source, copied);
-        assertThat(copied).exists();
-        assertThat(Files.readAllLines(source.toPath()).equals(Files.readAllLines(copied.toPath())));
         FileInputStream fileInputStream = new FileInputStream(getTestFile("whenSaveMultipartPictureFragment.bmp"));
         MockMultipartFile pictureFragment = new MockMultipartFile("file", "whenSaveMultipartPictureFragment.bmp",
                 String.valueOf(MediaType.valueOf("image/bmp")), fileInputStream);
-
-        int restoringPicturePartWidth = 31;
-        int restoringPicturePartHeight = 26;
+        fileInputStream.close();
 
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
+        Mockito.doNothing().when(pictureByteHandler).savePictureFragment(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),Mockito.any());
         mvc
                 .perform(multipart("/chartas/{id}/", picture.getId())
                         .file(pictureFragment)
                         .param("x", String.valueOf(0))
                         .param("y", String.valueOf(0))
-                        .param("width", String.valueOf(restoringPicturePartWidth))
-                        .param("height", String.valueOf(restoringPicturePartHeight)
+                        .param("width", String.valueOf(restoringPictureFragmentWidth))
+                        .param("height", String.valueOf(restoringPictureFragmentHeight)
                         )
                 ).andDo(print())
                 .andExpect(status().isOk());
-        assertThat(copied).exists();
     }
 
     @Test
