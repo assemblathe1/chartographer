@@ -3,8 +3,6 @@ package com.github.assemblathe1.chartographer;
 import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.repositories.PicturesRepository;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +18,6 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -31,14 +28,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class PicturesControllerTest {
+public class PicturesControllerStatusOkTests {
     @Autowired
     private MockMvc mvc;
     Picture picture = new Picture();
     long pictureByteSize;
 
     @PostConstruct
-    public void beforeAll() {
+    public void postConstruct() {
         picture.setId(1L);
         picture.setWidth(51);
         picture.setHeight(102);
@@ -62,11 +59,11 @@ public class PicturesControllerTest {
         picture.setUrl(createdPicture);
         given(picturesRepository.save(Mockito.any())).willReturn(picture);
         mvc
-                .perform(post("/chartas/?width=100&height=200"))
+                .perform(post("/chartas/{width}&{height}", picture.getWidth(), picture.getHeight()))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(content().string(picture.getId().toString()));
-        assertThat(new File(createdPicture)).exists().hasSize(pictureByteSize);
+        assertThat(new File(createdPicture)).exists();
     }
 
     @Test
@@ -76,7 +73,7 @@ public class PicturesControllerTest {
         picture.setUrl(copied.getAbsolutePath());
         Files.deleteIfExists(copied.toPath());
         assertThat(copied).doesNotExist();
-        assertThat(source).exists();
+        assertThat(source).exists().hasSize(pictureByteSize);
         FileUtils.copyFile(source, copied);
         assertThat(copied).exists();
         assertThat(Files.readAllLines(source.toPath()).equals(Files.readAllLines(copied.toPath())));
@@ -98,7 +95,7 @@ public class PicturesControllerTest {
                         )
                 ).andDo(print())
                 .andExpect(status().isOk());
-        assertThat(copied).exists().hasSize(pictureByteSize);
+        assertThat(copied).exists();
     }
 
     @Test
