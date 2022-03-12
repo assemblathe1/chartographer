@@ -17,10 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.Optional;
@@ -50,13 +50,19 @@ public class PicturesServiceTest {
     long pictureByteSize;
     int restoringFragmentWidth = 31;
     int restoringFragmentHeight = 26;
+    int x = 0;
+    int y = 0;
 
     @PostConstruct
     public void postConstruct() {
         picture.setId(1L);
         picture.setWidth(51);
         picture.setHeight(102);
-        pictureByteSize = 54 + picture.getWidth() * picture.getHeight() * 3L + picture.getHeight() * (picture.getWidth() * 3 % 4 == 0 ? 0 : 4 - (picture.getWidth() * 3 % 4));
+        pictureByteSize = getPictureByteSize(picture.getWidth(), picture.getHeight());
+    }
+
+    private long getPictureByteSize(int width, int height) {
+        return 54 + width * height * 3L + height * (width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4));
     }
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
@@ -113,8 +119,6 @@ public class PicturesServiceTest {
         fileInputStream.close();
 
         // Сохранение фрагмента с нужными координатами х и у
-        int x = 0;
-        int y = 0;
         picturesService.savePictureFragment(picture.getId().toString(), x, y, restoringFragmentWidth, restoringFragmentHeight, pictureFragment);
 
         // Проверка корректности папируса после восстановления фрагмента
@@ -139,28 +143,43 @@ public class PicturesServiceTest {
     }
 
     @Test
-    public void givenId_whenGetMultipartPictureFragment_thenStatus200andMultipartPictureFragmentReturns() throws Exception {
+    public void getPictureFragmentTest() throws Exception {
+        // Подготавливаем и проверяем тестовый папирус
         String sourcePicture = getTestFile("whenGetMultipartPictureFragment.bmp");
         picture.setUrl(sourcePicture);
         assertThat(new File(sourcePicture)).exists().hasSize(pictureByteSize);
+        FileInputStream fileInputStream = new FileInputStream(sourcePicture);
+        BufferedImage bufferedImage = ImageIO.read(fileInputStream);
+        fileInputStream.close();
 
+
+        long returningPictureByteSize = getPictureByteSize(restoringFragmentWidth, restoringFragmentHeight);
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        int returningPictureWidth = 31;
-        int returningPictureHeight = 26;
-        long returningPictureByteSize = 54 + returningPictureWidth * returningPictureHeight * 3L + returningPictureHeight * (returningPictureWidth * 3 % 4 == 0 ? 0 : 4 - (returningPictureWidth * 3 % 4));
 
-        mvc
-                .perform(get("/chartas/{id}/", picture.getId())
-                        .param("x", String.valueOf(0))
-                        .param("y", String.valueOf(0))
-                        .param("width", String.valueOf(returningPictureWidth))
-                        .param("height", String.valueOf(returningPictureHeight)
-                        )
-                )
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.valueOf("image/bmp")))
-                .andExpect(header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(returningPictureByteSize)));
+        // Получаем и проверяем полученный фрагмент
+        byte[] byteArray = picturesService.getPictureFragment(picture.getId().toString(), x, y, restoringFragmentWidth, restoringFragmentHeight).toByteArray();
+        assertEquals(byteArray.length, returningPictureByteSize);
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(byteArray);
+        BufferedImage bufferedFragment = ImageIO.read(byteArrayInputStream);
+        byteArrayInputStream.close();
+
+        assertEquals(bufferedFragment.getHeight(), restoringFragmentHeight);
+        assertEquals(bufferedFragment.getWidth(), restoringFragmentWidth);
+
+        for (int i = 0; i < 10; i++) {
+            int testColorX = new Random().ints(1, restoringFragmentWidth - 1).findFirst().getAsInt();
+            int testColorY = new Random().ints(1, restoringFragmentHeight - 1).findFirst().getAsInt();
+            assertEquals(
+                    bufferedImage.getRGB(
+                            testColorX + x,
+                            testColorY + y
+                    ),
+                    bufferedFragment.getRGB(
+                            testColorX,
+                            testColorY
+                    )
+            );
+        }
     }
 
     @Test
