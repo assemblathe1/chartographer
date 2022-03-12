@@ -61,7 +61,10 @@ public class PicturesControllerStatusBadTests {
 
     private void sendCreatePictureRequest(int width, int height) throws Exception {
         mvc
-                .perform(post("/chartas/{width}&{height}", width, height))
+                .perform(post("/chartas/")
+                        .param("width", String.valueOf(width))
+                        .param("height", String.valueOf(height))
+                )
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }

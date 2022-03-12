@@ -2,8 +2,9 @@ package com.github.assemblathe1.chartographer;
 
 import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.repositories.PicturesRepository;
-import com.github.assemblathe1.chartographer.utils.PictureByteHandler;
+import com.github.assemblathe1.chartographer.services.PicturesService;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +17,18 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.Optional;
+import java.util.Random;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -29,9 +36,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class PicturesControllerStatusOkTests {
+public class PicturesServiceTest {
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private PicturesService picturesService;
+
+    @MockBean
+    private PicturesRepository picturesRepository;
+
     Picture picture = new Picture();
     long pictureByteSize;
 
@@ -43,12 +57,6 @@ public class PicturesControllerStatusOkTests {
         pictureByteSize = 54 + picture.getWidth() * picture.getHeight() * 3L + picture.getHeight() * (picture.getWidth() * 3 % 4 == 0 ? 0 : 4 - (picture.getWidth() * 3 % 4));
     }
 
-    @MockBean
-    private PicturesRepository picturesRepository;
-
-    @MockBean
-    private PictureByteHandler pictureByteHandler;
-
     private final String tmpdir = System.getProperty("java.io.tmpdir");
 
     private String getTestFile(String fileName) {
@@ -56,17 +64,26 @@ public class PicturesControllerStatusOkTests {
     }
 
     @Test
-    public void givenPicture_whenSaveNewPicture_thenStatus201andIDReturns() throws Exception {
+    public void createPictureTest() throws Exception {
+        String createdPicture = tmpdir + "whenSaveNewPicture.bmp";
+        File createdBMPFile = new File(createdPicture);
+        picture.setUrl(createdPicture);
+
+        Files.deleteIfExists(createdBMPFile.toPath());
+        assertThat(createdBMPFile).doesNotExist();
         given(picturesRepository.save(Mockito.any())).willReturn(picture);
-        Mockito.doNothing().when(pictureByteHandler).createPicture(Mockito.any(), Mockito.any(), Mockito.any());
-        mvc
-                .perform(post("/chartas/")
-                        .param("width", picture.getWidth().toString())
-                        .param("height", picture.getHeight().toString())
-                )
-                .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(content().string(picture.getId().toString()));
+
+        picturesService.createPicture(picture.getWidth(), picture.getHeight());
+        assertThat(createdBMPFile).exists().hasSize(pictureByteSize);
+        assertEquals(URLConnection.guessContentTypeFromName(createdBMPFile.getName()), "image/bmp");
+
+        BufferedImage bufferedImage = ImageIO.read(createdBMPFile);
+        assertEquals(bufferedImage.getWidth(), picture.getWidth());
+        assertEquals(bufferedImage.getHeight(), picture.getHeight());
+        for (int i = 0; i < 10; i++) {
+            assertEquals(bufferedImage.getRGB(new Random().ints(1, picture.getWidth() - 1).findFirst().getAsInt(), new Random().ints(1, picture.getHeight() - 1).findFirst().getAsInt()), new Color(0, 0, 0).getRGB());
+        }
+        Files.delete(createdBMPFile.toPath());
     }
 
     @Test
