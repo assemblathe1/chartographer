@@ -68,10 +68,8 @@ public class PicturesService {
     //TODO нет проверки на то что удаляемый файл уже удален - мб и не надо, если нет ошибок
     public void deletePicture(String id) {
         Picture picture = findPictureById(id);
-        String pictureUrl = picture.getUrl();
-        if (pictureUrl != null) {
+        if (pictureByteHandler.deletePicture(picture)) {
             picturesRepository.deleteById(Long.valueOf(id));
-            new File(pictureUrl).delete();
         }
     }
 

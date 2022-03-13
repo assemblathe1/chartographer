@@ -225,4 +225,9 @@ public class PictureByteHandler {
         bytes[startoffset + 2] = (byte) (value >>> 16);
         bytes[startoffset + 3] = (byte) (value >>> 24);
     }
+
+    public boolean deletePicture(Picture picture) {
+        if (picture.getUrl() != null) return new File(picture.getUrl()).delete();
+        return false;
+    }
 }

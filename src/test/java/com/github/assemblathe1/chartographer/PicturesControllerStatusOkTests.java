@@ -124,22 +124,11 @@ public class PicturesControllerStatusOkTests {
 
     @Test
     public void givenId_whenDeletePicture_thenStatus200() throws Exception {
-        File source = new File(getTestFile("whenDeletePicture.bmp"));
-        File copied = new File(tmpdir + "whenDeletePicture.bmp");
-        picture.setUrl(copied.getAbsolutePath());
-        Files.deleteIfExists(copied.toPath());
-        assertThat(copied).doesNotExist();
-        assertThat(source).exists();
-        FileUtils.copyFile(source, copied);
-        assertThat(copied).exists();
-        assertThat(Files.readAllLines(source.toPath()).equals(Files.readAllLines(copied.toPath())));
-
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
+        given(pictureByteHandler.deletePicture(picture)).willReturn(true);
         mvc
                 .perform(delete("/chartas/{id}/", picture.getId()))
                 .andDo(print())
                 .andExpect(status().isOk());
-
-        assertThat(copied).doesNotExist();
     }
 }

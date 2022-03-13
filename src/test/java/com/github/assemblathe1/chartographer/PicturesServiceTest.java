@@ -4,6 +4,7 @@ import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.repositories.PicturesRepository;
 import com.github.assemblathe1.chartographer.services.PicturesService;
 import org.apache.commons.io.FileUtils;
+import org.hibernate.mapping.Any;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,9 @@ import java.util.Random;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -183,7 +186,8 @@ public class PicturesServiceTest {
     }
 
     @Test
-    public void givenId_whenDeletePicture_thenStatus200() throws Exception {
+    public void deletePictureTest() throws Exception {
+        //Копируем тестовый файл в temp
         File source = new File(getTestFile("whenDeletePicture.bmp"));
         File copied = new File(tmpdir + "whenDeletePicture.bmp");
         picture.setUrl(copied.getAbsolutePath());
@@ -195,11 +199,8 @@ public class PicturesServiceTest {
         assertThat(Files.readAllLines(source.toPath()).equals(Files.readAllLines(copied.toPath())));
 
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        mvc
-                .perform(delete("/chartas/{id}/", picture.getId()))
-                .andDo(print())
-                .andExpect(status().isOk());
-
+        doNothing().when(picturesRepository).deleteById(Mockito.anyLong());
+        picturesService.deletePicture(picture.getId().toString());
         assertThat(copied).doesNotExist();
     }
 }
