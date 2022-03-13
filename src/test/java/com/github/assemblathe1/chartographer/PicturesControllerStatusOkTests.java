@@ -16,6 +16,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import javax.annotation.PostConstruct;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -94,27 +95,31 @@ public class PicturesControllerStatusOkTests {
 
     @Test
     public void givenId_whenGetMultipartPictureFragment_thenStatus200andMultipartPictureFragmentReturns() throws Exception {
-        String sourcePicture = getTestFile("whenGetMultipartPictureFragment.bmp");
-        picture.setUrl(sourcePicture);
-        assertThat(new File(sourcePicture)).exists().hasSize(pictureByteSize);
+        // Подготавливаем файл для тела ответа
+        String sourcePictureFile = getTestFile("whenSaveMultipartPictureFragment.bmp");
+        assertThat(new File(sourcePictureFile)).exists();
+        FileInputStream fileInputStream = new FileInputStream(getTestFile("whenSaveMultipartPictureFragment.bmp"));
+        int sourceFileByteLength = fileInputStream.available();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byteArrayOutputStream.write(fileInputStream.readAllBytes());
+        fileInputStream.close();
+        byteArrayOutputStream.close();
 
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        int returningPictureWidth = 31;
-        int returningPictureHeight = 26;
-        long returningPictureByteSize = 54 + returningPictureWidth * returningPictureHeight * 3L + returningPictureHeight * (returningPictureWidth * 3 % 4 == 0 ? 0 : 4 - (returningPictureWidth * 3 % 4));
-
+        Mockito.doReturn(byteArrayOutputStream).when(pictureByteHandler).getPictureFragment(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         mvc
                 .perform(get("/chartas/{id}/", picture.getId())
                         .param("x", String.valueOf(0))
                         .param("y", String.valueOf(0))
-                        .param("width", String.valueOf(returningPictureWidth))
-                        .param("height", String.valueOf(returningPictureHeight)
+                        .param("width", String.valueOf(restoringPictureFragmentWidth))
+                        .param("height", String.valueOf(restoringPictureFragmentHeight)
                         )
                 )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.valueOf("image/bmp")))
-                .andExpect(header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(returningPictureByteSize)));
+                .andExpect(header().string(HttpHeaders.CONTENT_LENGTH, String.valueOf(sourceFileByteLength)));
+
     }
 
     @Test

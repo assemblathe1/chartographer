@@ -152,7 +152,6 @@ public class PicturesServiceTest {
         BufferedImage bufferedImage = ImageIO.read(fileInputStream);
         fileInputStream.close();
 
-
         long returningPictureByteSize = getPictureByteSize(restoringFragmentWidth, restoringFragmentHeight);
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
 
@@ -166,6 +165,7 @@ public class PicturesServiceTest {
         assertEquals(bufferedFragment.getHeight(), restoringFragmentHeight);
         assertEquals(bufferedFragment.getWidth(), restoringFragmentWidth);
 
+        // Проверяем соответствие цветов пикселей исходного изображения и полученного фрагмента
         for (int i = 0; i < 10; i++) {
             int testColorX = new Random().ints(1, restoringFragmentWidth - 1).findFirst().getAsInt();
             int testColorY = new Random().ints(1, restoringFragmentHeight - 1).findFirst().getAsInt();
