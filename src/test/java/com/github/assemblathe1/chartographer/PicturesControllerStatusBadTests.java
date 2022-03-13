@@ -16,11 +16,10 @@ import javax.annotation.PostConstruct;
 import java.io.FileInputStream;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -56,7 +55,7 @@ public class PicturesControllerStatusBadTests {
         sendCreatePictureRequest(maxValidWidth + 1, maxValidHeight);
         sendCreatePictureRequest(maxValidWidth, maxValidHeight + 1);
         sendCreatePictureRequest(-1, maxValidHeight);
-        sendCreatePictureRequest(maxValidWidth, - 1);
+        sendCreatePictureRequest(maxValidWidth, -1);
     }
 
     private void sendCreatePictureRequest(int width, int height) throws Exception {
