@@ -23,6 +23,15 @@ import java.util.UUID;
 public class PicturesService {
     @Value("${upload.path}")
     private String picturesDirectory;
+    @Value("${upload.maxPictureWidth}")
+    private int maxPictureWidth;
+    @Value("${upload.maxPictureHeight}")
+    private int maxPictureHeight;
+    @Value("${upload.maxFragmentWidth}")
+    private int maxFragmentWidth;
+    @Value("${upload.maxFragmentHeight}")
+    private int maxFragmentHeight;
+
     private final PicturesRepository picturesRepository;
     private final PictureValidator pictureValidator;
     private final StartupArgumentsRunner startupArgumentsRunner;
@@ -31,11 +40,11 @@ public class PicturesService {
     @Transactional
     public Long createPicture(Integer width, Integer height) {
         String picturesFolder = startupArgumentsRunner.getFolder();
-        String url = picturesFolder.length() > 2 ? picturesFolder.substring(2, picturesFolder.length()-1) + "/" + UUID.randomUUID() + ".bmp" : picturesDirectory + UUID.randomUUID() + ".bmp";
-        pictureValidator.validate(0, 0, width, height, 20000, 50000, width, height);
+        String url = picturesFolder.length() > 2 ? picturesFolder.substring(2, picturesFolder.length() - 1) + "/" + UUID.randomUUID() + ".bmp" : picturesDirectory + UUID.randomUUID() + ".bmp";
+        pictureValidator.validate(0, 0, width, height, maxPictureWidth, maxPictureHeight, width, height);
         Picture savedPicture = picturesRepository.save(new Picture(url, width, height));
         try {
-            if (savedPicture.getId() != null) pictureByteHandler.createPicture(savedPicture.getWidth(), savedPicture.getHeight(), savedPicture.getUrl());
+            pictureByteHandler.createPicture(savedPicture.getWidth(), savedPicture.getHeight(), savedPicture.getUrl());
         } catch (IOException e) {
             picturesRepository.deleteById(savedPicture.getId());
             throw new WritingToDiskException("Internal Server Error");
@@ -45,7 +54,7 @@ public class PicturesService {
 
     public void savePictureFragment(String id, Integer x, Integer y, Integer width, Integer height, MultipartFile pictureFragment) {
         Picture picture = findPictureById(id);
-        pictureValidator.validate(x, y, width, height, 20000, 50000, picture.getWidth(), picture.getHeight());
+        pictureValidator.validate(x, y, width, height, maxPictureWidth, maxPictureHeight, picture.getWidth(), picture.getHeight());
         try {
             pictureByteHandler.savePictureFragment(x, y, width, height, pictureFragment, picture);
         } catch (IOException e) {
@@ -55,7 +64,7 @@ public class PicturesService {
 
     public ByteArrayOutputStream getPictureFragment(String id, Integer x, Integer y, Integer width, Integer height) {
         Picture picture = findPictureById(id);
-        pictureValidator.validate(x, y, width, height, 5000, 5000, picture.getWidth(), picture.getHeight());
+        pictureValidator.validate(x, y, width, height, maxFragmentWidth, maxFragmentHeight, picture.getWidth(), picture.getHeight());
         ByteArrayOutputStream byteArrayOutputStream;
         try {
             byteArrayOutputStream = pictureByteHandler.getPictureFragment(x, y, width, height, picture);

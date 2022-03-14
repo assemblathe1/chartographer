@@ -20,3 +20,7 @@ spring:
         web-allow-others: false
 upload:
     path: src\\main\\resources\\pictures\\
+    maxPictureWidth: 10000
+    maxPictureHeight: 50000
+    maxFragmentWidth: 5000
+    maxFragmentHeight: 5000

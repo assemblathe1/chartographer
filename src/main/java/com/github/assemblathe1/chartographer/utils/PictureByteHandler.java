@@ -150,7 +150,10 @@ public class PictureByteHandler {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byteArrayOutputStream.write(header, 0, header.length);
-        RandomAccessFile randomAccessFile = new RandomAccessFile(picture.getUrl(), "r");
+
+        File originalImage = new File(picture.getUrl());
+        if (!originalImage.exists()) throw new WritingToDiskException("Internal Server Error");
+        RandomAccessFile randomAccessFile = new RandomAccessFile(originalImage, "r");
 
         int randomAccessFileRowPadding = picture.getWidth() * 3 % 4 == 0 ? 0 : 4 - (picture.getWidth() * 3 % 4);
         int randomAccessFileBeforeMeaningfulHeight = 0;
