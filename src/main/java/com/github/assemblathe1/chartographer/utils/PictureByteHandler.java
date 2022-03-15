@@ -41,18 +41,9 @@ public class PictureByteHandler {
     };
 
     public void createPicture(Integer width, Integer height, String url) throws IOException {
-        int rowPadding = width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4);
-        long imageBytesWithPadding = width * height * 3L + height * rowPadding;
-        long filesizeBytes = imageBytesWithPadding + BMP_SIZE_HEADER;
-        byte[] header = BMP_HEADER.clone();
-        writeIntLE(header, BMP_OFFSET_FILESIZE_BYTES, filesizeBytes);
-        writeIntLE(header, BMP_OFFSET_IMAGE_WIDTH, width);
-        writeIntLE(header, BMP_OFFSET_IMAGE_HEIGHT, height);
-        writeIntLE(header, BMP_OFFSET_IMAGE_DATA_BYTES, filesizeBytes);
-
         FileOutputStream fileOutputStream = new FileOutputStream(url);
-        fileOutputStream.write(header, 0, header.length);
-
+        long imageBytesWithPadding = getImageBytesLength(width, height);
+        createBMPHeader(width, height, fileOutputStream);
         if (imageBytesWithPadding > 1024) {
             byte[] row = new byte[1024];
             long mod = imageBytesWithPadding % 1024;
@@ -139,68 +130,24 @@ public class PictureByteHandler {
     }
 
     public ByteArrayOutputStream getPictureFragment(Integer x, Integer y, Integer width, Integer height, Picture picture) throws IOException {
-        int outputStreamRowPadding = width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4);
-        long imageBytesWithPadding = width * height * 3L + height * outputStreamRowPadding;
-        long filesizeBytes = imageBytesWithPadding + BMP_SIZE_HEADER;
-        byte[] header = BMP_HEADER.clone();
-        writeIntLE(header, BMP_OFFSET_FILESIZE_BYTES, filesizeBytes);
-        writeIntLE(header, BMP_OFFSET_IMAGE_WIDTH, width);
-        writeIntLE(header, BMP_OFFSET_IMAGE_HEIGHT, height);
-        writeIntLE(header, BMP_OFFSET_IMAGE_DATA_BYTES, filesizeBytes);
-
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byteArrayOutputStream.write(header, 0, header.length);
+        createBMPHeader(width, height, byteArrayOutputStream);
 
         File originalImage = new File(picture.getUrl());
         if (!originalImage.exists()) throw new WritingToDiskException("Internal Server Error");
         RandomAccessFile randomAccessFile = new RandomAccessFile(originalImage, "r");
 
-        int randomAccessFileRowPadding = picture.getWidth() * 3 % 4 == 0 ? 0 : 4 - (picture.getWidth() * 3 % 4);
-        int randomAccessFileBeforeMeaningfulHeight = 0;
-        int randomAccessFileMeaningfulHeight = height;
+        int outputStreamRowPadding = getRowPadding(width);
+        int randomAccessFileRowPadding = getRowPadding(picture.getWidth());
+        int randomAccessFileMeaningfulHeight = (y + height) > picture.getHeight() ? picture.getHeight() - y : height;
+        int randomAccessFileBeforeMeaningfulHeight = (y + height) > picture.getHeight() ? height - picture.getHeight() + y : 0;
+        int bufferOffset = x < 0 ? Math.abs(x) * 3 : 0;
+        int newBufferLength = (x + width) > picture.getWidth() ? x < 0 ? 3 * (picture.getWidth()) + bufferOffset : 3 * (picture.getWidth() - x) :  3 * width;
 
-        Long startOffsetRandomAccessFile = Long.valueOf(54);
-        int offset = 0;
-        int newBufferLength = width * 3;
-
-        if (x >= 0 && (x + width) <= picture.getWidth()) {
-            startOffsetRandomAccessFile = 54 + 3L * picture.getWidth() * (picture.getHeight() - height - y) + randomAccessFileRowPadding * (picture.getHeight() - height - y) + 3 * x;
-            if ((y + height) > picture.getHeight()) {
-                startOffsetRandomAccessFile = 54L + (3 * x);
-                randomAccessFileBeforeMeaningfulHeight = height - (picture.getHeight() - y);
-                randomAccessFileMeaningfulHeight = picture.getHeight() - y;
-            }
-        }
-
-        if (x < 0) {
-            startOffsetRandomAccessFile = 54 + 3L * picture.getWidth() * (picture.getHeight() - height - y) + randomAccessFileRowPadding * (picture.getHeight() - height - y);
-            offset = Math.abs(x) * 3;
-            if ((y + height) > picture.getHeight()) {
-                startOffsetRandomAccessFile = 54L;
-                randomAccessFileBeforeMeaningfulHeight = height - (picture.getHeight() - y);
-                randomAccessFileMeaningfulHeight = picture.getHeight() - y;
-            }
-        }
-
-        if ((x + width) > picture.getWidth()) {
-            startOffsetRandomAccessFile = 54 + 3L * picture.getWidth() * (picture.getHeight() - height - y) + randomAccessFileRowPadding * (picture.getHeight() - height - y) + 3 * x;
-            newBufferLength = (picture.getWidth() - x) * 3;
-
-            if (x < 0) {
-                startOffsetRandomAccessFile = 54 + 3L * picture.getWidth() * (picture.getHeight() - height - y) + randomAccessFileRowPadding * (picture.getHeight() - height - y);
-                offset = Math.abs(x) * 3;
-                newBufferLength = (picture.getWidth()) * 3 + offset;
-            }
-
-            if ((y + height) > picture.getHeight()) {
-                startOffsetRandomAccessFile = 54 + 3L * x;
-
-                if (x < 0) startOffsetRandomAccessFile = 54L;
-
-                randomAccessFileBeforeMeaningfulHeight = height - (picture.getHeight() - y);
-                randomAccessFileMeaningfulHeight = picture.getHeight() - y;
-            }
-        }
+        long startOffsetRandomAccessFile = x < 0 ? getDefaultStartOffsetRandomAccessFile(x, y, height, picture, randomAccessFileRowPadding) - 3L * x : getDefaultStartOffsetRandomAccessFile(x, y, height, picture, randomAccessFileRowPadding);
+        if (x < 0 && y + height > picture.getHeight()) startOffsetRandomAccessFile = 54L;
+        if (x >= 0 && x + width <= picture.getWidth() && (y + height) > picture.getHeight()) startOffsetRandomAccessFile = 54 + 3L * x;
+        if (x + width > picture.getWidth() && y + height > picture.getHeight()) startOffsetRandomAccessFile = x < 0 ? 54 : 54 + 3L * x;
 
         for (int j = 0; j < randomAccessFileBeforeMeaningfulHeight; j++) {
             byte[] buffer = new byte[width * 3 + outputStreamRowPadding];
@@ -210,11 +157,11 @@ public class PictureByteHandler {
         for (int i = 0; i < randomAccessFileMeaningfulHeight; i++) {
             byte[] buffer = new byte[width * 3];
             randomAccessFile.seek(startOffsetRandomAccessFile);
-            randomAccessFile.read(buffer, offset, newBufferLength - offset);
+            randomAccessFile.read(buffer, bufferOffset, newBufferLength - bufferOffset);
             byteArrayOutputStream.write(buffer);
             byte[] bufferOutputStreamRowPadding = new byte[outputStreamRowPadding];
             byteArrayOutputStream.write(bufferOutputStreamRowPadding);
-            startOffsetRandomAccessFile += picture.getWidth() * 3 + randomAccessFileRowPadding;
+            startOffsetRandomAccessFile += 3L * picture.getWidth() + randomAccessFileRowPadding;
         }
 
         randomAccessFile.close();
@@ -222,15 +169,39 @@ public class PictureByteHandler {
         return byteArrayOutputStream;
     }
 
+    public boolean deletePicture(Picture picture) {
+        if (picture.getUrl() != null) return new File(picture.getUrl()).delete();
+        return false;
+    }
+
+    private long getDefaultStartOffsetRandomAccessFile(Integer x, Integer y, Integer height, Picture picture, int randomAccessFileRowPadding) {
+        return 54L + 3L * picture.getWidth() * (picture.getHeight() - height - y) + (long) randomAccessFileRowPadding * (picture.getHeight() - height - y) + 3L * x;
+    }
+
+    private int getRowPadding(int width) {
+        return width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4);
+    }
+
+    private long getImageBytesLength(int width, int height) {
+        int rowPadding = getRowPadding(width);
+        return 3L * width * height + height * rowPadding;
+    }
+
+    private void createBMPHeader(int width, int height, OutputStream outputStream) throws IOException {
+        long imageBytesWithPadding = getImageBytesLength(width, height);
+        long filesizeBytes = imageBytesWithPadding + BMP_SIZE_HEADER;
+        byte[] header = BMP_HEADER.clone();
+        writeIntLE(header, BMP_OFFSET_FILESIZE_BYTES, filesizeBytes);
+        writeIntLE(header, BMP_OFFSET_IMAGE_WIDTH, width);
+        writeIntLE(header, BMP_OFFSET_IMAGE_HEIGHT, height);
+        writeIntLE(header, BMP_OFFSET_IMAGE_DATA_BYTES, filesizeBytes);
+        outputStream.write(header, 0, header.length);
+    }
+
     private void writeIntLE(byte[] bytes, int startoffset, long value) {
         bytes[startoffset] = (byte) (value);
         bytes[startoffset + 1] = (byte) (value >>> 8);
         bytes[startoffset + 2] = (byte) (value >>> 16);
         bytes[startoffset + 3] = (byte) (value >>> 24);
-    }
-
-    public boolean deletePicture(Picture picture) {
-        if (picture.getUrl() != null) return new File(picture.getUrl()).delete();
-        return false;
     }
 }
