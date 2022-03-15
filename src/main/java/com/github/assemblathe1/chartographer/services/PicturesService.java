@@ -38,7 +38,7 @@ public class PicturesService {
     private final PictureByteHandler pictureByteHandler;
 
     @Transactional
-    public Long createPicture(Integer width, Integer height) {
+    public Long createPicture(int width, int height) {
         String picturesFolder = startupArgumentsRunner.getFolder();
         String url = picturesFolder.length() > 2 ? picturesFolder.substring(2, picturesFolder.length() - 1) + "/" + UUID.randomUUID() + ".bmp" : picturesDirectory + UUID.randomUUID() + ".bmp";
         pictureValidator.validate(0, 0, width, height, maxPictureWidth, maxPictureHeight, width, height);
@@ -52,7 +52,7 @@ public class PicturesService {
         return savedPicture.getId();
     }
 
-    public void savePictureFragment(String id, Integer x, Integer y, Integer width, Integer height, MultipartFile pictureFragment) {
+    public void savePictureFragment(String id, int x, int y, int width, int height, MultipartFile pictureFragment) {
         Picture picture = findPictureById(id);
         pictureValidator.validate(x, y, width, height, maxPictureWidth, maxPictureHeight, picture.getWidth(), picture.getHeight());
         try {
@@ -62,7 +62,7 @@ public class PicturesService {
         }
     }
 
-    public ByteArrayOutputStream getPictureFragment(String id, Integer x, Integer y, Integer width, Integer height) {
+    public ByteArrayOutputStream getPictureFragment(String id, int x, int y, int width, int height) {
         Picture picture = findPictureById(id);
         pictureValidator.validate(x, y, width, height, maxFragmentWidth, maxFragmentHeight, picture.getWidth(), picture.getHeight());
         ByteArrayOutputStream byteArrayOutputStream;
