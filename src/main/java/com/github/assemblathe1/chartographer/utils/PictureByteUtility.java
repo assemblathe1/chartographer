@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 
 @Component
-public class PictureByteHandler {
+public class PictureByteUtility {
     private static final int BMP_SIZE_HEADER = 54;                                      // total header length, 54 bytes
     //  private static final int BMP_SIZE_IMAGE_WIDTH = 4;                                  // size of image width field, 4 bytes
 //  private static final int BMP_SIZE_PAYLOAD_LENGTH = 4;                               // size of 'horizontal resolution' field, here: payload length, 4 bytes
@@ -59,13 +59,19 @@ public class PictureByteHandler {
         File originalImage = new File(picture.getUrl());
         if (!originalImage.exists()) throw new WritingToDiskException("Internal Server Error");
 
+        byte[] buffer = new byte[(width) * 3];
+        int offset = x < 0 ? 3 * Math.abs(x) : 0;
         int inputStreamRowPadding = getRowPadding(width);
         int randomAccessFileRowPadding = getRowPadding(picture.getWidth());
-        int startOffsetInputStream = (y + height) > picture.getHeight() ? 54 + 3 * width * (y + height - picture.getHeight()) + inputStreamRowPadding * (y + height - picture.getHeight()) : 54;
-        byte[] buffer = new byte[(width) * 3];
-        int newBufferLength = (x + width) > picture.getWidth() ? 3 * (picture.getWidth() - x) : buffer.length;
-        int offset = x < 0 ? 3 * Math.abs(x) : 0;
-        int availableInputStreamBuffer = y < 0 ? (x + width) > picture.getWidth() ? 54 + (3 * width * Math.abs(y)) : 54 + 3 * width * Math.abs(y) + inputStreamRowPadding * Math.abs(y) : 0;
+        int newBufferLength = x + width > picture.getWidth() ? 3 * (picture.getWidth() - x) : buffer.length;
+        long startOffsetInputStream = y + height > picture.getHeight()
+                ? countDefaultStartOffsetRandomAccessFile(0, -y, -height, width, -picture.getHeight(), inputStreamRowPadding)
+                : 54;
+        long availableInputStreamBuffer = y < 0
+                ? (x + width) > picture.getWidth()
+                ? countAvailableBufferIfFragmentWidthMorePictureWidth(y, width)
+                : countAvailableBufferIfFragmentWidthMorePictureWidth(y, width) + (long) inputStreamRowPadding * Math.abs(y)
+                : 0;
 
         long startOffsetRandomAccessFile = getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
         if (x + width > picture.getWidth() && y + height > picture.getHeight()) startOffsetRandomAccessFile = 54 + 3L * x;
@@ -90,14 +96,19 @@ public class PictureByteHandler {
 
         File originalImage = new File(picture.getUrl());
         if (!originalImage.exists()) throw new WritingToDiskException("Internal Server Error");
-        RandomAccessFile randomAccessFile = new RandomAccessFile(originalImage, "r");
 
+        RandomAccessFile randomAccessFile = new RandomAccessFile(originalImage, "r");
         int outputStreamRowPadding = getRowPadding(width);
         int randomAccessFileRowPadding = getRowPadding(picture.getWidth());
         int randomAccessFileMeaningfulHeight = (y + height) > picture.getHeight() ? picture.getHeight() - y : height;
         int randomAccessFileBeforeMeaningfulHeight = (y + height) > picture.getHeight() ? height - picture.getHeight() + y : 0;
         int bufferOffset = x < 0 ? Math.abs(x) * 3 : 0;
-        int newBufferLength = (x + width) > picture.getWidth() ? x < 0 ? 3 * (picture.getWidth()) + bufferOffset : 3 * (picture.getWidth() - x) : 3 * width;
+        int newBufferLength = (x + width) > picture.getWidth()
+                ? x < 0
+                ? 3 * (picture.getWidth()) + bufferOffset
+                : 3 * (picture.getWidth() - x)
+                : 3 * width;
+
         long startOffsetRandomAccessFile = getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
         if (x + width > picture.getWidth() && y + height > picture.getHeight()) startOffsetRandomAccessFile = x < 0 ? 54 : 54 + 3L * x;
 
@@ -126,15 +137,21 @@ public class PictureByteHandler {
         return false;
     }
 
-    private long getStartOffsetRandomAccessFile(int x, int y, int width, int height, Picture picture, int randomAccessFileRowPadding) {
-        long startOffsetRandomAccessFile = x < 0 ? countDefaultStartOffsetRandomAccessFile(x, y, height, picture, randomAccessFileRowPadding) - 3L * x : countDefaultStartOffsetRandomAccessFile(x, y, height, picture, randomAccessFileRowPadding);
+    private long getStartOffsetRandomAccessFile(int x, int y, int width, int height, Picture picture, long randomAccessFileRowPadding) {
+        long startOffsetRandomAccessFile = x < 0 ?
+                countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding) - 3L * x
+                : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding);
         if (x >= 0 && x + width <= picture.getWidth() && (y + height) > picture.getHeight()) startOffsetRandomAccessFile = 54 + 3L * x;
         if (x < 0 && y + height > picture.getHeight()) startOffsetRandomAccessFile = 54L;
         return startOffsetRandomAccessFile;
     }
 
-    private long countDefaultStartOffsetRandomAccessFile(int x, int y, int height, Picture picture, int randomAccessFileRowPadding) {
-        return 54 + 3L * picture.getWidth() * (picture.getHeight() - height - y) + (long) randomAccessFileRowPadding * (picture.getHeight() - height - y) + 3 * x;
+    private long countDefaultStartOffsetRandomAccessFile(int x, int y, int height, int pictureWidth, int pictureHeight, long randomAccessFileRowPadding) {
+        return 54 + 3L * pictureWidth * (pictureHeight - height - y) + (long) randomAccessFileRowPadding * (pictureHeight - height - y) + 3 * x;
+    }
+
+    private long countAvailableBufferIfFragmentWidthMorePictureWidth(int y, int width) {
+        return 54 + 3L * width * Math.abs(y);
     }
 
     private int getRowPadding(int width) {
@@ -157,10 +174,10 @@ public class PictureByteHandler {
         outputStream.write(header, 0, header.length);
     }
 
-    private void writeIntLE(byte[] bytes, int startoffset, long value) {
-        bytes[startoffset] = (byte) (value);
-        bytes[startoffset + 1] = (byte) (value >>> 8);
-        bytes[startoffset + 2] = (byte) (value >>> 16);
-        bytes[startoffset + 3] = (byte) (value >>> 24);
+    private void writeIntLE(byte[] bytes, int startOffset, long value) {
+        bytes[startOffset] = (byte) (value);
+        bytes[startOffset + 1] = (byte) (value >>> 8);
+        bytes[startOffset + 2] = (byte) (value >>> 16);
+        bytes[startOffset + 3] = (byte) (value >>> 24);
     }
 }

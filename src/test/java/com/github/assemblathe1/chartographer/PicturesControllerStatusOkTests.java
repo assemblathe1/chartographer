@@ -2,8 +2,7 @@ package com.github.assemblathe1.chartographer;
 
 import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.repositories.PicturesRepository;
-import com.github.assemblathe1.chartographer.utils.PictureByteHandler;
-import org.apache.commons.io.FileUtils;
+import com.github.assemblathe1.chartographer.utils.PictureByteUtility;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +13,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.file.Files;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -48,7 +47,7 @@ public class PicturesControllerStatusOkTests {
     private PicturesRepository picturesRepository;
 
     @MockBean
-    private PictureByteHandler pictureByteHandler;
+    private PictureByteUtility pictureByteUtility;
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
     private final int restoringPictureFragmentWidth = 31;
@@ -60,8 +59,8 @@ public class PicturesControllerStatusOkTests {
 
     @Test
     public void givenPicture_whenSaveNewPicture_thenStatus201andIDReturns() throws Exception {
-        given(picturesRepository.save(Mockito.any())).willReturn(picture);
-        Mockito.doNothing().when(pictureByteHandler).createPicture(Mockito.any(), Mockito.any(), Mockito.any());
+        given(picturesRepository.save(Mockito.any(Picture.class))).willReturn(picture);
+        Mockito.doNothing().when(pictureByteUtility).createPicture(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString());
         mvc
                 .perform(post("/chartas/")
                         .param("width", picture.getWidth().toString())
@@ -80,7 +79,15 @@ public class PicturesControllerStatusOkTests {
         fileInputStream.close();
 
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        Mockito.doNothing().when(pictureByteHandler).savePictureFragment(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),Mockito.any());
+        Mockito.doNothing().when(pictureByteUtility).savePictureFragment(
+                Mockito.anyInt(),
+                Mockito.anyInt(),
+                Mockito.anyInt(),
+                Mockito.anyInt(),
+                Mockito.any(MultipartFile.class),
+                Mockito.any(Picture.class)
+        );
+
         mvc
                 .perform(multipart("/chartas/{id}/", picture.getId())
                         .file(pictureFragment)
@@ -106,7 +113,14 @@ public class PicturesControllerStatusOkTests {
         byteArrayOutputStream.close();
 
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        Mockito.doReturn(byteArrayOutputStream).when(pictureByteHandler).getPictureFragment(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(byteArrayOutputStream).when(pictureByteUtility).getPictureFragment(
+                Mockito.anyInt(),
+                Mockito.anyInt(),
+                Mockito.anyInt(),
+                Mockito.anyInt(),
+                Mockito.any(Picture.class)
+        );
+
         mvc
                 .perform(get("/chartas/{id}/", picture.getId())
                         .param("x", String.valueOf(0))
@@ -125,7 +139,7 @@ public class PicturesControllerStatusOkTests {
     @Test
     public void givenId_whenDeletePicture_thenStatus200() throws Exception {
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        given(pictureByteHandler.deletePicture(picture)).willReturn(true);
+        given(pictureByteUtility.deletePicture(picture)).willReturn(true);
         mvc
                 .perform(delete("/chartas/{id}/", picture.getId()))
                 .andDo(print())

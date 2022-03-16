@@ -72,7 +72,7 @@ public class PicturesServiceTest {
 
         Files.deleteIfExists(createdBMPFile.toPath());
         assertThat(createdBMPFile).doesNotExist();
-        given(picturesRepository.save(Mockito.any())).willReturn(picture);
+        given(picturesRepository.save(Mockito.any(Picture.class))).willReturn(picture);
 
         picturesService.createPicture(picture.getWidth(), picture.getHeight());
         assertThat(createdBMPFile).exists().hasSize(pictureByteSize);
@@ -98,7 +98,7 @@ public class PicturesServiceTest {
         FileUtils.copyFile(sourcePicture, copiedPicture);
         assertThat(copiedPicture).exists();
         assertThat(Files.readAllLines(sourcePicture.toPath()).equals(Files.readAllLines(copiedPicture.toPath())));
-        given(picturesRepository.findById(Mockito.any())).willReturn(Optional.of(picture));
+        given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
 
         // Проверка корректности отпавляемого фрагмента изображения
         File restoringFragment = new File(getTestFile("whenSaveMultipartPictureFragment.bmp"));
