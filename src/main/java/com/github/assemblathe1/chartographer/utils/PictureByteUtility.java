@@ -21,7 +21,7 @@ public class PictureByteUtility {
 //  private static final int BMP_OFFSET_BMPUTIL_MAGIC = 42;                             // 4 bytes
 
     private static final byte UDEF = 0;                                                 // undefined value in bitmap header, to be overwritten by methods
-    private static final byte[] BMP_HEADER = new byte[]{
+    private static final byte[] BMP_HEADER = new byte[] {
             /* 00 */ 0x42, 0x4d,                                                        // signature, "BM"
             /* 02 */ UDEF, UDEF, UDEF, UDEF,                                            // size in bytes, filled dynamically
             /* 06 */ 0x00, 0x00,                                                        // reserved, must be zero
@@ -138,8 +138,8 @@ public class PictureByteUtility {
     }
 
     private long getStartOffsetRandomAccessFile(int x, int y, int width, int height, Picture picture, long randomAccessFileRowPadding) {
-        long startOffsetRandomAccessFile = x < 0 ?
-                countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding) - 3L * x
+        long startOffsetRandomAccessFile = x < 0
+                ? countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding) - 3L * x
                 : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding);
         if (x >= 0 && x + width <= picture.getWidth() && (y + height) > picture.getHeight()) startOffsetRandomAccessFile = 54 + 3L * x;
         if (x < 0 && y + height > picture.getHeight()) startOffsetRandomAccessFile = 54L;
@@ -147,7 +147,7 @@ public class PictureByteUtility {
     }
 
     private long countDefaultStartOffsetRandomAccessFile(int x, int y, int height, int pictureWidth, int pictureHeight, long randomAccessFileRowPadding) {
-        return 54 + 3L * pictureWidth * (pictureHeight - height - y) + (long) randomAccessFileRowPadding * (pictureHeight - height - y) + 3 * x;
+        return 54 + 3L * pictureWidth * (pictureHeight - height - y) + randomAccessFileRowPadding * (pictureHeight - height - y) + 3L * x;
     }
 
     private long countAvailableBufferIfFragmentWidthMorePictureWidth(int y, int width) {

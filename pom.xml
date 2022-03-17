@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>ru.gnkoshelev.kontur.intern</groupId>
-    <artifactId>Chartographer</artifactId>
+    <artifactId>chartographer</artifactId>
     <version>1.0.0</version>
-    <name>Chartographer</name>
-    <description>Chartographer</description>
+    <name>chartographer</name>
+    <description>chartographer</description>
     <properties>
         <java.version>11</java.version>
     </properties>

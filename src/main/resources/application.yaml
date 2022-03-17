@@ -5,7 +5,8 @@ server:
 spring:
   datasource:
     driver-class-name: org.h2.Driver
-    url: jdbc:h2:file:./src/main/resources/papyri;MODE=PostgreSQL
+#    url: jdbc:h2:file:./src/main/resources/papyri;MODE=PostgreSQL
+    url: jdbc:h2:mem:mydatabase;MODE=PostgreSQL
     username: sa
     password:
   jpa:
@@ -19,7 +20,6 @@ spring:
       settings:
         web-allow-others: false
 upload:
-    path: src\\main\\resources\\pictures\\
     maxPictureWidth: 10000
     maxPictureHeight: 50000
     maxFragmentWidth: 5000

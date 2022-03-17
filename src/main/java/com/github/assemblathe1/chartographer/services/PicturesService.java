@@ -14,14 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class PicturesService {
-    @Value("${upload.path}")
-    private String picturesDirectory;
     @Value("${upload.maxPictureWidth}")
     private int maxPictureWidth;
     @Value("${upload.maxPictureHeight}")
@@ -39,13 +39,22 @@ public class PicturesService {
     @Transactional
     public Long createPicture(int width, int height) {
         String picturesFolder = startupArgumentsRunner.getFolder();
-        String url = picturesFolder.length() > 2 ? picturesFolder.substring(2, picturesFolder.length() - 1) + "/" + UUID.randomUUID() + ".bmp" : picturesDirectory + UUID.randomUUID() + ".bmp";
+        String url = picturesFolder.length() > 2
+                ? createBMPFilePath(picturesFolder.substring(1, picturesFolder.length() - 1))
+                : createBMPFilePath(System.getProperty("java.io.tmpdir") + "/pictures");
+
+        System.out.println(System.getProperty("user.dir"));
+        System.out.println(PicturesService.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        System.out.println(url);
+        System.out.println("!!!   " + Path.of(url).toFile().getAbsolutePath());
+
         pictureValidator.validate(0, 0, width, height, maxPictureWidth, maxPictureHeight, width, height);
         Picture savedPicture = picturesRepository.save(new Picture(url, width, height));
         try {
             pictureByteUtility.createPicture(savedPicture.getWidth(), savedPicture.getHeight(), savedPicture.getUrl());
         } catch (IOException e) {
             picturesRepository.deleteById(savedPicture.getId());
+            e.getMessage();
             throw new WritingToDiskException("Internal Server Error");
         }
         return savedPicture.getId();
@@ -85,5 +94,12 @@ public class PicturesService {
         return picturesRepository
                 .findById(Long.valueOf(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Picture with id " + id + " was not found"));
+    }
+
+    private String createBMPFilePath(String savingFolder) {
+        File defaultPicturesDirectory = new File(savingFolder);
+        if (!defaultPicturesDirectory.exists()) defaultPicturesDirectory.mkdir();
+        System.out.println("createBMPFileDefaultPath " + defaultPicturesDirectory.getPath());
+        return Path.of(defaultPicturesDirectory.getPath() + "/" + UUID.randomUUID() + ".bmp").toString();
     }
 }

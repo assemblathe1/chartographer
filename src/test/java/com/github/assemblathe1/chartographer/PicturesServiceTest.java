@@ -56,14 +56,6 @@ public class PicturesServiceTest {
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
 
-    private long getPictureByteSize(int width, int height) {
-        return 54 + width * height * 3L + height * (width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4));
-    }
-
-    private String getTestFile(String fileName) {
-        return getClass().getClassLoader().getResource("pictures/" + fileName).getPath();
-    }
-
     @Test
     public void createPictureTest() throws Exception {
         String createdPicture = tmpdir + "whenSaveNewPicture.bmp";
@@ -82,7 +74,14 @@ public class PicturesServiceTest {
         assertEquals(bufferedImage.getWidth(), picture.getWidth());
         assertEquals(bufferedImage.getHeight(), picture.getHeight());
         for (int i = 0; i < 10; i++) {
-            assertEquals(bufferedImage.getRGB(new Random().ints(1, picture.getWidth() - 1).findFirst().getAsInt(), new Random().ints(1, picture.getHeight() - 1).findFirst().getAsInt()), new Color(0, 0, 0).getRGB());
+            assertEquals(bufferedImage.getRGB(new Random()
+                            .ints(1, picture.getWidth() - 1)
+                            .findFirst()
+                            .getAsInt(),
+                    new Random().ints(1, picture.getHeight() - 1)
+                            .findFirst()
+                            .getAsInt()), new Color(0, 0, 0)
+                            .getRGB());
         }
     }
 
@@ -222,6 +221,14 @@ public class PicturesServiceTest {
         doNothing().when(picturesRepository).deleteById(Mockito.anyLong());
         picturesService.deletePicture(picture.getId().toString());
         assertThat(copied).doesNotExist();
+    }
+
+    private String getTestFile(String fileName) {
+        return getClass().getClassLoader().getResource("pictures/" + fileName).getPath();
+    }
+
+    private long getPictureByteSize(int width, int height) {
+        return 54 + width * height * 3L + height * (width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4));
     }
 
     private void runSavePictureFragment(String pictureId, int x, int y, MockMultipartFile pictureFragment) {
