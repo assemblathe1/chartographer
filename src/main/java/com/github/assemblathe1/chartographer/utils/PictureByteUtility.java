@@ -10,7 +10,7 @@ import java.io.*;
 @Component
 public class PictureByteUtility {
     private static final int BMP_SIZE_HEADER = 54;                                      // total header length, 54 bytes
-    //  private static final int BMP_SIZE_IMAGE_WIDTH = 4;                                  // size of image width field, 4 bytes
+//  private static final int BMP_SIZE_IMAGE_WIDTH = 4;                                  // size of image width field, 4 bytes
 //  private static final int BMP_SIZE_PAYLOAD_LENGTH = 4;                               // size of 'horizontal resolution' field, here: payload length, 4 bytes
 //  private static final int BMP_SIZE_BMPUTIL_MAGIC = 4;                                // size of 'vertical resolution' field, here: payload length, 4 bytes
     private static final int BMP_OFFSET_FILESIZE_BYTES = 2;                             // offset of filesize field, 4 bytes

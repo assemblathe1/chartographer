@@ -11,28 +11,36 @@ import java.util.List;
 
 @Component
 public class PictureValidator {
-    public void validate(Integer x, Integer y, Integer width, Integer height, Integer maxValidWidth, Integer maxValidHeight, Integer originalPictureWidth, Integer originalPictureHeight) {
+    public void validate(Integer x,
+                         Integer y,
+                         Integer width,
+                         Integer height,
+                         Integer maxValidWidth,
+                         Integer maxValidHeight,
+                         Integer originalPictureWidth,
+                         Integer originalPictureHeight
+    ) {
         List<String> errors = new ArrayList<>();
-        if (width <= 0) {
-            errors.add("Width can not be less than 0");
-        }
-        if (height <= 0) {
-            errors.add("Height can not be less than 0");
-        }
-        if (width > maxValidWidth) {
-            errors.add("Width can not be more than " + maxValidWidth + " .If you want to handle so BIG picture, increase limit in PictureService");
-        }
-        if (height > maxValidHeight) {
-            errors.add("Height can not be less than " + maxValidHeight + " .If you want to handle so BIG picture, increase limit in PictureService");
-        }
-        if (x + width <= 0 || x >= originalPictureWidth) {
-            errors.add("Fragment and papyrus do not cross by x ");
-        }
-        if (y + height <= 0 || y >= originalPictureHeight) {
-            errors.add("Fragment and papyrus do not cross by y ");
-        }
-        if (!errors.isEmpty()) {
-            throw new ValidationException(errors);
-        }
+        checkIfValueLessThanZero(width, errors, "Width");
+        checkIfValueLessThanZero(height, errors, "Height");
+        checkIfValueMoreThanMaxvalue(width, maxValidWidth, errors, "Width");
+        checkIfValueMoreThanMaxvalue(height, maxValidHeight, errors, "Height");
+        checkIfFragmentNotCrossPicture(x, width, originalPictureWidth, errors, "x");
+        checkIfFragmentNotCrossPicture(y, height, originalPictureHeight, errors, "y");
+
+        if (!errors.isEmpty()) throw new ValidationException(errors);
+    }
+
+    private void checkIfValueLessThanZero(Integer value, List<String> errors, String parameter) {
+        if (value <= 0) errors.add(parameter + " can not be less than 0");
+    }
+
+    private void checkIfValueMoreThanMaxvalue(Integer value, Integer maxValue, List<String> errors, String parameter) {
+        if (value > maxValue) errors.add(parameter + " can not be more than " + maxValue + " .If you want to handle so BIG picture, increase limit in PictureService");
+    }
+
+    private void checkIfFragmentNotCrossPicture(Integer value, Integer fragmentSideSize, Integer pictureSideSize,  List<String> errors, String parameter) {
+        if (value == null || pictureSideSize == null) return;
+        if (value + fragmentSideSize <= 0 || value >= pictureSideSize) errors.add("Fragment and papyrus do not cross by " + parameter);
     }
 }

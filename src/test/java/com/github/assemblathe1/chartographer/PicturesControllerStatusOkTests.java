@@ -49,7 +49,6 @@ public class PicturesControllerStatusOkTests {
     @MockBean
     private PictureByteUtility pictureByteUtility;
 
-    private final String tmpdir = System.getProperty("java.io.tmpdir");
     private final int restoringPictureFragmentWidth = 31;
     private final int restoringPictureFragmentHeight = 26;
 

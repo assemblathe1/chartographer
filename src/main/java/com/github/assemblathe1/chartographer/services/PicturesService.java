@@ -48,7 +48,7 @@ public class PicturesService {
         System.out.println(url);
         System.out.println("!!!   " + Path.of(url).toFile().getAbsolutePath());
 
-        pictureValidator.validate(0, 0, width, height, maxPictureWidth, maxPictureHeight, width, height);
+        pictureValidator.validate(null, null, width, height, maxPictureWidth, maxPictureHeight, null, null);
         Picture savedPicture = picturesRepository.save(new Picture(url, width, height));
         try {
             pictureByteUtility.createPicture(savedPicture.getWidth(), savedPicture.getHeight(), savedPicture.getUrl());

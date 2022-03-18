@@ -56,6 +56,7 @@ public class PicturesControllerStatusBadTests {
         sendCreatePictureRequest(maxValidWidth, maxValidHeight + 1);
         sendCreatePictureRequest(-1, maxValidHeight);
         sendCreatePictureRequest(maxValidWidth, -1);
+        sendCreatePictureRequest(-1, -1);
     }
 
     private void sendCreatePictureRequest(int width, int height) throws Exception {

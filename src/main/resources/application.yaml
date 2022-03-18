@@ -20,7 +20,7 @@ spring:
       settings:
         web-allow-others: false
 upload:
-    maxPictureWidth: 10000
+    maxPictureWidth: 20000
     maxPictureHeight: 50000
     maxFragmentWidth: 5000
     maxFragmentHeight: 5000
