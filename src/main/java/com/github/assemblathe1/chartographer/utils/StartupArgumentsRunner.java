@@ -11,7 +11,7 @@ import java.util.Arrays;
 public class StartupArgumentsRunner implements CommandLineRunner {
     private String folder;
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         this.folder = Arrays.deepToString(args);
     }
 }

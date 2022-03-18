@@ -5,8 +5,8 @@ server:
 spring:
   datasource:
     driver-class-name: org.h2.Driver
-#    url: jdbc:h2:file:./src/main/resources/papyri;MODE=PostgreSQL
-    url: jdbc:h2:mem:mydatabase;MODE=PostgreSQL
+    url: jdbc:h2:file:../db/papyri;MODE=PostgreSQL
+#    url: jdbc:h2:mem:mydatabase;MODE=PostgreSQL
     username: sa
     password:
   jpa:
