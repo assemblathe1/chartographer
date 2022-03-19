@@ -57,11 +57,13 @@ public class PictureByteUtility {
 
     public void savePictureFragment(int x, int y, int width, int height, MultipartFile pictureFragment, Picture picture) throws IOException {
         File originalImage = checkFileExistsOrThrowException(picture.getUrl());
-        byte[] buffer = new byte[(width) * 3];
+        byte[] buffer = new byte[width * 3];
         int offset = x < 0 ? 3 * Math.abs(x) : 0;
         int inputStreamRowPadding = getRowPadding(width);
         int randomAccessFileRowPadding = getRowPadding(picture.getWidth());
-        int newBufferLength = x + width > picture.getWidth() ? 3 * (picture.getWidth() - x) : buffer.length;
+        int newBufferLength = x + width > picture.getWidth()
+                ? x < 0 ? 3 * picture.getWidth() + offset : 3 * (picture.getWidth() - x)
+                : 3 * width;
         long startOffsetInputStream = y + height > picture.getHeight()
                 ? countDefaultStartOffsetRandomAccessFile(0, -y, -height, width, -picture.getHeight(), inputStreamRowPadding)
                 : 54;
@@ -70,9 +72,9 @@ public class PictureByteUtility {
                 ? countAvailableBufferIfFragmentWidthMorePictureWidth(y, width)
                 : countAvailableBufferIfFragmentWidthMorePictureWidth(y, width) + (long) inputStreamRowPadding * Math.abs(y)
                 : 0;
-        long startOffsetRandomAccessFile = x + width > picture.getWidth() && y + height > picture.getHeight() ?
-                54 + 3L * x :
-                getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
+        long startOffsetRandomAccessFile = x + width > picture.getWidth() && y + height > picture.getHeight()
+                ? x < 0 ? 54 : 54 + 3L * x
+                : getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
 
         InputStream inputStream = pictureFragment.getInputStream();
         inputStream.skip(startOffsetInputStream);
@@ -99,10 +101,9 @@ public class PictureByteUtility {
         int randomAccessFileMeaningfulHeight = (y + height) > picture.getHeight() ? picture.getHeight() - y : height;
         int randomAccessFileBeforeMeaningfulHeight = (y + height) > picture.getHeight() ? height - picture.getHeight() + y : 0;
         int bufferOffset = x < 0 ? Math.abs(x) * 3 : 0;
-        int newBufferLength = (x + width) > picture.getWidth()
-                ? x < 0 ? 3 * (picture.getWidth()) + bufferOffset : 3 * (picture.getWidth() - x)
+        int newBufferLength = x + width > picture.getWidth()
+                ? x < 0 ? 3 * picture.getWidth() + bufferOffset : 3 * (picture.getWidth() - x)
                 : 3 * width;
-
         long startOffsetRandomAccessFile = x + width > picture.getWidth() && y + height > picture.getHeight()
                 ? x < 0 ? 54 : 54 + 3L * x
                 : getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
