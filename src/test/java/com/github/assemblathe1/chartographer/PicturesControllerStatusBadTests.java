@@ -24,23 +24,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 public class PicturesControllerStatusBadTests {
+
     @Autowired
     private MockMvc mvc;
     Picture picture = new Picture();
-    int restoringOrReturningPicturePartWidth;
-    int restoringOrReturningPicturePartHeight;
-    int maxValidWidth;
-    int maxValidHeight;
+    int fragmentWidth;
+    int fragmentHeight;
+    int maxValidPictureWidth;
+    int maxValidPictureHeight;
 
     @PostConstruct
     public void postConstruct() {
         picture.setId(1L);
-        maxValidWidth = 20000;
-        maxValidHeight = 50000;
-        picture.setWidth(maxValidWidth);
-        picture.setHeight(maxValidHeight);
-        restoringOrReturningPicturePartWidth = 31;
-        restoringOrReturningPicturePartHeight = 26;
+        maxValidPictureWidth = 20000;
+        maxValidPictureHeight = 50000;
+        picture.setWidth(maxValidPictureWidth);
+        picture.setHeight(maxValidPictureHeight);
+        fragmentWidth = 31;
+        fragmentHeight = 26;
     }
 
     @MockBean
@@ -52,10 +53,10 @@ public class PicturesControllerStatusBadTests {
 
     @Test
     public void givenPicture_whenCreateNewPicture_thenStatus400() throws Exception {
-        sendCreatePictureRequest(maxValidWidth + 1, maxValidHeight);
-        sendCreatePictureRequest(maxValidWidth, maxValidHeight + 1);
-        sendCreatePictureRequest(-1, maxValidHeight);
-        sendCreatePictureRequest(maxValidWidth, -1);
+        sendCreatePictureRequest(maxValidPictureWidth + 1, maxValidPictureHeight);
+        sendCreatePictureRequest(maxValidPictureWidth, maxValidPictureHeight + 1);
+        sendCreatePictureRequest(-1, maxValidPictureHeight);
+        sendCreatePictureRequest(maxValidPictureWidth, -1);
         sendCreatePictureRequest(-1, -1);
     }
 
@@ -80,22 +81,22 @@ public class PicturesControllerStatusBadTests {
         );
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
 
-        sendSavePictureFragmentRequest(pictureFragment, -restoringOrReturningPicturePartWidth - 1, 0, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendSavePictureFragmentRequest(pictureFragment, 0, -restoringOrReturningPicturePartHeight - 1, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendSavePictureFragmentRequest(pictureFragment, picture.getWidth() + 1, 0, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendSavePictureFragmentRequest(pictureFragment, 0, picture.getHeight() + 1, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendSavePictureFragmentRequest(pictureFragment, 0, 0, maxValidWidth + 1, restoringOrReturningPicturePartHeight);
-        sendSavePictureFragmentRequest(pictureFragment, 0, 0, restoringOrReturningPicturePartWidth, maxValidHeight + 1);
+        sendSavePictureFragmentRequest(pictureFragment, -fragmentWidth - 1, 0, fragmentWidth, fragmentHeight);
+        sendSavePictureFragmentRequest(pictureFragment, 0, -fragmentHeight - 1, fragmentWidth, fragmentHeight);
+        sendSavePictureFragmentRequest(pictureFragment, picture.getWidth() + 1, 0, fragmentWidth, fragmentHeight);
+        sendSavePictureFragmentRequest(pictureFragment, 0, picture.getHeight() + 1, fragmentWidth, fragmentHeight);
+        sendSavePictureFragmentRequest(pictureFragment, 0, 0, maxValidPictureWidth + 1, fragmentHeight);
+        sendSavePictureFragmentRequest(pictureFragment, 0, 0, fragmentWidth, maxValidPictureHeight + 1);
     }
 
-    private void sendSavePictureFragmentRequest(MockMultipartFile pictureFragment, int x, int y, int restoringPicturePartWidth, int restoringPicturePartHeight) throws Exception {
+    private void sendSavePictureFragmentRequest(MockMultipartFile pictureFragment, int x, int y, int fragmentWidth, int fragmentHeight) throws Exception {
         mvc
                 .perform(multipart("/chartas/{id}/", picture.getId())
                         .file(pictureFragment)
                         .param("x", String.valueOf(x))
                         .param("y", String.valueOf(y))
-                        .param("width", String.valueOf(restoringPicturePartWidth))
-                        .param("height", String.valueOf(restoringPicturePartHeight)
+                        .param("width", String.valueOf(fragmentWidth))
+                        .param("height", String.valueOf(fragmentHeight)
                         )
                 )
                 .andDo(print())
@@ -105,12 +106,12 @@ public class PicturesControllerStatusBadTests {
     @Test
     public void givenId_whenGetMultipartPictureFragment_thenStatus400() throws Exception {
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        sendGetPictureFragmentRequest(-restoringOrReturningPicturePartWidth - 1, 0, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendGetPictureFragmentRequest(0, -restoringOrReturningPicturePartHeight - 1, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendGetPictureFragmentRequest(picture.getWidth() + 1, 0, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendGetPictureFragmentRequest(0, picture.getHeight() + 1, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);
-        sendGetPictureFragmentRequest(0, 0, maxValidWidth + 1, restoringOrReturningPicturePartHeight);
-        sendGetPictureFragmentRequest(0, 0, restoringOrReturningPicturePartWidth, maxValidHeight + 1);
+        sendGetPictureFragmentRequest(-fragmentWidth - 1, 0, fragmentWidth, fragmentHeight);
+        sendGetPictureFragmentRequest(0, -fragmentHeight - 1, fragmentWidth, fragmentHeight);
+        sendGetPictureFragmentRequest(picture.getWidth() + 1, 0, fragmentWidth, fragmentHeight);
+        sendGetPictureFragmentRequest(0, picture.getHeight() + 1, fragmentWidth, fragmentHeight);
+        sendGetPictureFragmentRequest(0, 0, maxValidPictureWidth + 1, fragmentHeight);
+        sendGetPictureFragmentRequest(0, 0, fragmentWidth, maxValidPictureHeight + 1);
     }
 
     private void sendGetPictureFragmentRequest(int x, int y, int returningPicturePartWidth, int returningPicturePartHeight) throws Exception {

@@ -37,7 +37,7 @@ public class PicturesController {
     }
 
     @GetMapping(value = "/{id}")
-    public  ResponseEntity<byte[]> getPictureFragment(
+    public ResponseEntity<byte[]> getPictureFragment(
             @PathVariable String id,
             @RequestParam(name = "x") Integer x,
             @RequestParam(name = "y") Integer y,
@@ -45,8 +45,6 @@ public class PicturesController {
             @RequestParam(name = "height") Integer height) {
         return ResponseEntity.ok().contentType(MediaType.valueOf("image/bmp")).body(picturesService.getPictureFragment(id, x, y, width, height).toByteArray());
     }
-
-    //TODO при удалении файла которого нет, ошибка не появляется
 
     @DeleteMapping(value = "/{id}")
     @ResponseStatus(HttpStatus.OK)

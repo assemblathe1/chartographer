@@ -40,7 +40,7 @@ public class PicturesControllerStatusOkTests {
         picture.setId(1L);
         picture.setWidth(51);
         picture.setHeight(102);
-        pictureByteSize = 54 + picture.getWidth() * picture.getHeight() * 3L + picture.getHeight() * (picture.getWidth() * 3 % 4 == 0 ? 0 : 4 - (picture.getWidth() * 3 % 4));
+        pictureByteSize = getPictureByteSize();
     }
 
     @MockBean
@@ -49,9 +49,9 @@ public class PicturesControllerStatusOkTests {
     @MockBean
     private PictureByteUtility pictureByteUtility;
 
-    private final int restoringPictureFragmentWidth = 31;
-    private final int restoringPictureFragmentHeight = 26;
+    private final int fragmentWidth = 31;
 
+    private final int fragmentHeight = 26;
     private String getTestFile(String fileName) {
         return getClass().getClassLoader().getResource("pictures/" + fileName).getPath();
     }
@@ -92,8 +92,8 @@ public class PicturesControllerStatusOkTests {
                         .file(pictureFragment)
                         .param("x", String.valueOf(0))
                         .param("y", String.valueOf(0))
-                        .param("width", String.valueOf(restoringPictureFragmentWidth))
-                        .param("height", String.valueOf(restoringPictureFragmentHeight)
+                        .param("width", String.valueOf(fragmentWidth))
+                        .param("height", String.valueOf(fragmentHeight)
                         )
                 ).andDo(print())
                 .andExpect(status().isOk());
@@ -124,8 +124,8 @@ public class PicturesControllerStatusOkTests {
                 .perform(get("/chartas/{id}/", picture.getId())
                         .param("x", String.valueOf(0))
                         .param("y", String.valueOf(0))
-                        .param("width", String.valueOf(restoringPictureFragmentWidth))
-                        .param("height", String.valueOf(restoringPictureFragmentHeight)
+                        .param("width", String.valueOf(fragmentWidth))
+                        .param("height", String.valueOf(fragmentHeight)
                         )
                 )
                 .andDo(print())
@@ -143,5 +143,12 @@ public class PicturesControllerStatusOkTests {
                 .perform(delete("/chartas/{id}/", picture.getId()))
                 .andDo(print())
                 .andExpect(status().isOk());
+    }
+
+    private long getPictureByteSize() {
+        return 54 + picture.getWidth() * picture.getHeight() * 3L + picture.getHeight() * (picture.getWidth() * 3 % 4 == 0
+                ? 0
+                : 4 - (picture.getWidth() * 3L % 4)
+        );
     }
 }

@@ -43,8 +43,8 @@ public class PicturesServiceTest {
 
     Picture picture = new Picture();
     long pictureByteSize;
-    int restoringFragmentWidth = 31;
-    int restoringFragmentHeight = 26;
+    int fragmentWidth = 31;
+    int fragmentHeight = 26;
 
     @PostConstruct
     public void postConstruct() {
@@ -105,8 +105,8 @@ public class PicturesServiceTest {
         MockMultipartFile pictureFragment = new MockMultipartFile("file", "whenSaveMultipartPictureFragment.bmp",
                 String.valueOf(MediaType.valueOf("image/bmp")), fileInputStream);
         BufferedImage bufferedFragment = ImageIO.read(restoringFragment);
-        assertEquals(bufferedFragment.getWidth(), restoringFragmentWidth);
-        assertEquals(bufferedFragment.getHeight(), restoringFragmentHeight);
+        assertEquals(bufferedFragment.getWidth(), fragmentWidth);
+        assertEquals(bufferedFragment.getHeight(), fragmentHeight);
         fileInputStream.close();
 
         String pictureId = picture.getId().toString();
@@ -170,28 +170,28 @@ public class PicturesServiceTest {
         int currentFragmentWidth;
         // Проверяем соответствие цветов пикселей исходного изображения и полученного фрагмента
         // y < 0
-        checkReturnedFragmentsOfPapyrus(-26, -10, 27, 11, bufferedPicture);
-        checkReturnedFragmentsOfPapyrus(10, -10, 1, 11, bufferedPicture);
-        checkReturnedFragmentsOfPapyrus(46, -10, 1, 11, bufferedPicture);
+        checkReturnedFragment(-26, -10, 27, 11, bufferedPicture);
+        checkReturnedFragment(10, -10, 1, 11, bufferedPicture);
+        checkReturnedFragment(46, -10, 1, 11, bufferedPicture);
         // y >=0 && y >= width of papyrus
-        checkReturnedFragmentsOfPapyrus(-26, 38, 27, 1, bufferedPicture);
-        checkReturnedFragmentsOfPapyrus(10, 38, 1, 1, bufferedPicture);
-        checkReturnedFragmentsOfPapyrus(46, 38, 1, 1, bufferedPicture);
+        checkReturnedFragment(-26, 38, 27, 1, bufferedPicture);
+        checkReturnedFragment(10, 38, 1, 1, bufferedPicture);
+        checkReturnedFragment(46, 38, 1, 1, bufferedPicture);
         // y >= width of papyrus
-        checkReturnedFragmentsOfPapyrus(-26, 86, 27, 1, bufferedPicture);
-        checkReturnedFragmentsOfPapyrus(10, 86, 1, 1, bufferedPicture);
-        checkReturnedFragmentsOfPapyrus(46, 86, 1, 1, bufferedPicture);
+        checkReturnedFragment(-26, 86, 27, 1, bufferedPicture);
+        checkReturnedFragment(10, 86, 1, 1, bufferedPicture);
+        checkReturnedFragment(46, 86, 1, 1, bufferedPicture);
     }
 
-    private void checkReturnedFragmentsOfPapyrus(int x, int y, int testColorX, int testColorY, BufferedImage bufferedPicture) throws IOException {
+    private void checkReturnedFragment(int x, int y, int testColorX, int testColorY, BufferedImage bufferedPicture) throws IOException {
         // Получаем и проверяем полученный фрагмент
-        byte[] byteArray = picturesService.getPictureFragment(picture.getId().toString(), x, y, restoringFragmentWidth, restoringFragmentHeight).toByteArray();
-        assertEquals(byteArray.length, getPictureByteSize(restoringFragmentWidth, restoringFragmentHeight));
+        byte[] byteArray = picturesService.getPictureFragment(picture.getId().toString(), x, y, fragmentWidth, fragmentHeight).toByteArray();
+        assertEquals(byteArray.length, getPictureByteSize(fragmentWidth, fragmentHeight));
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(byteArray);
         BufferedImage bufferedFragment = ImageIO.read(byteArrayInputStream);
         byteArrayInputStream.close();
-        assertEquals(bufferedFragment.getHeight(), restoringFragmentHeight);
-        assertEquals(bufferedFragment.getWidth(), restoringFragmentWidth);
+        assertEquals(bufferedFragment.getHeight(), fragmentHeight);
+        assertEquals(bufferedFragment.getWidth(), fragmentWidth);
         assertEquals(
                 bufferedPicture.getRGB(
                         testColorX + x,
@@ -228,10 +228,13 @@ public class PicturesServiceTest {
     }
 
     private long getPictureByteSize(int width, int height) {
-        return 54 + width * height * 3L + height * (width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4));
+        return 54 + width * height * 3L + height * (width * 3 % 4 == 0
+                ? 0
+                : 4 - (width * 3L % 4)
+        );
     }
 
     private void runSavePictureFragment(String pictureId, int x, int y, MockMultipartFile pictureFragment) {
-        picturesService.savePictureFragment(pictureId, x, y, restoringFragmentWidth, restoringFragmentHeight, pictureFragment);
+        picturesService.savePictureFragment(pictureId, x, y, fragmentWidth, fragmentHeight, pictureFragment);
     }
 }

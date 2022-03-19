@@ -62,15 +62,11 @@ public class PictureByteUtility {
         int inputStreamRowPadding = getRowPadding(width);
         int randomAccessFileRowPadding = getRowPadding(picture.getWidth());
         int newBufferLength = getNewBufferLength(x, width, picture, offset);
+        long availableInputStreamBuffer = getAvailableInputStreamBuffer(x, y, width, picture, inputStreamRowPadding);
         long startOffsetRandomAccessFile = getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
         long startOffsetInputStream = y + height > picture.getHeight()
                 ? countDefaultStartOffsetRandomAccessFile(0, -y, -height, width, -picture.getHeight(), inputStreamRowPadding)
                 : 54;
-        long availableInputStreamBuffer = y < 0
-                ? x + width > picture.getWidth()
-                ? countAvailableBufferIfFragmentWidthMorePictureWidth(y, width)
-                : countAvailableBufferIfFragmentWidthMorePictureWidth(y, width) + (long) inputStreamRowPadding * Math.abs(y)
-                : 0;
 
         InputStream inputStream = pictureFragment.getInputStream();
         inputStream.skip(startOffsetInputStream);
@@ -149,6 +145,14 @@ public class PictureByteUtility {
 
     private int getRowPadding(int width) {
         return width * 3 % 4 == 0 ? 0 : 4 - (width * 3 % 4);
+    }
+
+    private long getAvailableInputStreamBuffer(int x, int y, int width, Picture picture, long inputStreamRowPadding) {
+        return y < 0
+                ? x + width > picture.getWidth()
+                ? countAvailableBufferIfFragmentWidthMorePictureWidth(y, width)
+                : countAvailableBufferIfFragmentWidthMorePictureWidth(y, width) + inputStreamRowPadding * Math.abs(y)
+                : 0;
     }
 
     private long getImageBytesLength(int width, int height) {

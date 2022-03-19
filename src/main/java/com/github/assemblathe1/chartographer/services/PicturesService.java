@@ -61,6 +61,8 @@ public class PicturesService {
 
     public void savePictureFragment(String id, int x, int y, int width, int height, MultipartFile pictureFragment) {
         Picture picture = findPictureById(id);
+
+        //TODO maxPictureWidth check
         pictureValidator.validate(x, y, width, height, maxPictureWidth, maxPictureHeight, picture.getWidth(), picture.getHeight());
         try {
             pictureByteUtility.savePictureFragment(x, y, width, height, pictureFragment, picture);
@@ -81,7 +83,6 @@ public class PicturesService {
         return byteArrayOutputStream;
     }
 
-    //TODO нет проверки на то что удаляемый файл уже удален - мб и не надо, если нет ошибок
     public void deletePicture(String id) {
         Picture picture = findPictureById(id);
         if (pictureByteUtility.deletePicture(picture)) picturesRepository.deleteById(Long.valueOf(id));
