@@ -51,7 +51,7 @@ public class PicturesControllerStatusBadTests {
     }
 
     @Test
-    public void givenPicture_whenSaveNewPicture_thenStatus400() throws Exception {
+    public void givenPicture_whenCreateNewPicture_thenStatus400() throws Exception {
         sendCreatePictureRequest(maxValidWidth + 1, maxValidHeight);
         sendCreatePictureRequest(maxValidWidth, maxValidHeight + 1);
         sendCreatePictureRequest(-1, maxValidHeight);
@@ -72,8 +72,12 @@ public class PicturesControllerStatusBadTests {
     @Test
     public void givenId_whenSaveMultipartPictureFragment_thenStatus400() throws Exception {
         FileInputStream fileInputStream = new FileInputStream(getTestFile("whenSaveMultipartPictureFragment.bmp"));
-        MockMultipartFile pictureFragment = new MockMultipartFile("file", "whenSaveMultipartPictureFragment.bmp",
-                String.valueOf(MediaType.valueOf("image/bmp")), fileInputStream);
+        MockMultipartFile pictureFragment = new MockMultipartFile(
+                "file",
+                "whenSaveMultipartPictureFragment.bmp",
+                String.valueOf(MediaType.valueOf("image/bmp")),
+                fileInputStream
+        );
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
 
         sendSavePictureFragmentRequest(pictureFragment, -restoringOrReturningPicturePartWidth - 1, 0, restoringOrReturningPicturePartWidth, restoringOrReturningPicturePartHeight);

@@ -54,7 +54,6 @@ public class PicturesService {
             pictureByteUtility.createPicture(savedPicture.getWidth(), savedPicture.getHeight(), savedPicture.getUrl());
         } catch (IOException e) {
             picturesRepository.deleteById(savedPicture.getId());
-            e.getMessage();
             throw new WritingToDiskException("Internal Server Error");
         }
         return savedPicture.getId();
@@ -85,9 +84,7 @@ public class PicturesService {
     //TODO нет проверки на то что удаляемый файл уже удален - мб и не надо, если нет ошибок
     public void deletePicture(String id) {
         Picture picture = findPictureById(id);
-        if (pictureByteUtility.deletePicture(picture)) {
-            picturesRepository.deleteById(Long.valueOf(id));
-        }
+        if (pictureByteUtility.deletePicture(picture)) picturesRepository.deleteById(Long.valueOf(id));
     }
 
     public Picture findPictureById(String id) {
