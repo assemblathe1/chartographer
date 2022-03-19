@@ -10,7 +10,7 @@ import java.io.*;
 @Component
 public class PictureByteUtility {
     private static final int BMP_SIZE_HEADER = 54;                                      // total header length, 54 bytes
-//  private static final int BMP_SIZE_IMAGE_WIDTH = 4;                                  // size of image width field, 4 bytes
+    //  private static final int BMP_SIZE_IMAGE_WIDTH = 4;                                  // size of image width field, 4 bytes
 //  private static final int BMP_SIZE_PAYLOAD_LENGTH = 4;                               // size of 'horizontal resolution' field, here: payload length, 4 bytes
 //  private static final int BMP_SIZE_BMPUTIL_MAGIC = 4;                                // size of 'vertical resolution' field, here: payload length, 4 bytes
     private static final int BMP_OFFSET_FILESIZE_BYTES = 2;                             // offset of filesize field, 4 bytes
@@ -21,7 +21,7 @@ public class PictureByteUtility {
 //  private static final int BMP_OFFSET_BMPUTIL_MAGIC = 42;                             // 4 bytes
 
     private static final byte UDEF = 0;                                                 // undefined value in bitmap header, to be overwritten by methods
-    private static final byte[] BMP_HEADER = new byte[] {
+    private static final byte[] BMP_HEADER = new byte[]{
             /* 00 */ 0x42, 0x4d,                                                        // signature, "BM"
             /* 02 */ UDEF, UDEF, UDEF, UDEF,                                            // size in bytes, filled dynamically
             /* 06 */ 0x00, 0x00,                                                        // reserved, must be zero
@@ -66,12 +66,13 @@ public class PictureByteUtility {
                 ? countDefaultStartOffsetRandomAccessFile(0, -y, -height, width, -picture.getHeight(), inputStreamRowPadding)
                 : 54;
         long availableInputStreamBuffer = y < 0
-                ? (x + width) > picture.getWidth()
+                ? x + width > picture.getWidth()
                 ? countAvailableBufferIfFragmentWidthMorePictureWidth(y, width)
                 : countAvailableBufferIfFragmentWidthMorePictureWidth(y, width) + (long) inputStreamRowPadding * Math.abs(y)
                 : 0;
-        long startOffsetRandomAccessFile = getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
-        if (x + width > picture.getWidth() && y + height > picture.getHeight()) startOffsetRandomAccessFile = 54 + 3L * x;
+        long startOffsetRandomAccessFile = x + width > picture.getWidth() && y + height > picture.getHeight() ?
+                54 + 3L * x :
+                getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
 
         InputStream inputStream = pictureFragment.getInputStream();
         inputStream.skip(startOffsetInputStream);
@@ -99,13 +100,12 @@ public class PictureByteUtility {
         int randomAccessFileBeforeMeaningfulHeight = (y + height) > picture.getHeight() ? height - picture.getHeight() + y : 0;
         int bufferOffset = x < 0 ? Math.abs(x) * 3 : 0;
         int newBufferLength = (x + width) > picture.getWidth()
-                ? x < 0
-                ? 3 * (picture.getWidth()) + bufferOffset
-                : 3 * (picture.getWidth() - x)
+                ? x < 0 ? 3 * (picture.getWidth()) + bufferOffset : 3 * (picture.getWidth() - x)
                 : 3 * width;
 
-        long startOffsetRandomAccessFile = getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
-        if (x + width > picture.getWidth() && y + height > picture.getHeight()) startOffsetRandomAccessFile = x < 0 ? 54 : 54 + 3L * x;
+        long startOffsetRandomAccessFile = x + width > picture.getWidth() && y + height > picture.getHeight()
+                ? x < 0 ? 54 : 54 + 3L * x
+                : getStartOffsetRandomAccessFile(x, y, width, height, picture, randomAccessFileRowPadding);
 
         for (int j = 0; j < randomAccessFileBeforeMeaningfulHeight; j++) {
             byte[] buffer = new byte[width * 3 + outputStreamRowPadding];
@@ -165,19 +165,13 @@ public class PictureByteUtility {
     }
 
     private long getStartOffsetRandomAccessFile(int x, int y, int width, int height, Picture picture, long randomAccessFileRowPadding) {
-        long startOffsetRandomAccessFile = x < 0
+        return x < 0
                 ? y + height > picture.getHeight()
                 ? 54L
                 : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding) - 3L * x
                 : (x + width <= picture.getWidth() && y + height > picture.getHeight())
                 ? 54 + 3L * x
-                :countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding);
-//        long startOffsetRandomAccessFile = x < 0
-//            ? countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding) - 3L * x
-//            : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding);
-//        if (x < 0 && y + height > picture.getHeight()) startOffsetRandomAccessFile = 54L;
-//        if (x >= 0 && x + width <= picture.getWidth() && (y + height) > picture.getHeight()) startOffsetRandomAccessFile = 54 + 3L * x;
-        return startOffsetRandomAccessFile;
+                : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding);
     }
 
     private void writeIntLE(byte[] bytes, int startOffset, long value) {
