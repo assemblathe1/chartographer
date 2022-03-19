@@ -5,4 +5,5 @@ public class WritingToDiskException extends RuntimeException {
     public WritingToDiskException(String message) {
         super(message);
     }
+
 }
