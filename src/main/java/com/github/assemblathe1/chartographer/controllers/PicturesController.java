@@ -43,7 +43,10 @@ public class PicturesController {
             @RequestParam(name = "y") Integer y,
             @RequestParam(name = "width") Integer width,
             @RequestParam(name = "height") Integer height) {
-        return ResponseEntity.ok().contentType(MediaType.valueOf("image/bmp")).body(picturesService.getPictureFragment(id, x, y, width, height).toByteArray());
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.valueOf("image/bmp"))
+                .body(picturesService.getPictureFragment(id, x, y, width, height).toByteArray());
     }
 
     @DeleteMapping(value = "/{id}")

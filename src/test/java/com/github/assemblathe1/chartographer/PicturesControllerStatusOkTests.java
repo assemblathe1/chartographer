@@ -2,7 +2,7 @@ package com.github.assemblathe1.chartographer;
 
 import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.repositories.PicturesRepository;
-import com.github.assemblathe1.chartographer.utils.PictureByteUtility;
+import com.github.assemblathe1.chartographer.services.BitmapFileService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +47,7 @@ public class PicturesControllerStatusOkTests {
     private PicturesRepository picturesRepository;
 
     @MockBean
-    private PictureByteUtility pictureByteUtility;
+    private BitmapFileService bitmapFileService;
 
     private final int fragmentWidth = 31;
 
@@ -59,7 +59,7 @@ public class PicturesControllerStatusOkTests {
     @Test
     public void givenPicture_whenSaveNewPicture_thenStatus201andIDReturns() throws Exception {
         given(picturesRepository.save(Mockito.any(Picture.class))).willReturn(picture);
-        Mockito.doNothing().when(pictureByteUtility).createPicture(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString());
+        Mockito.doNothing().when(bitmapFileService).createPicture(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString());
         mvc
                 .perform(post("/chartas/")
                         .param("width", picture.getWidth().toString())
@@ -78,7 +78,7 @@ public class PicturesControllerStatusOkTests {
         fileInputStream.close();
 
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        Mockito.doNothing().when(pictureByteUtility).savePictureFragment(
+        Mockito.doNothing().when(bitmapFileService).savePictureFragment(
                 Mockito.anyInt(),
                 Mockito.anyInt(),
                 Mockito.anyInt(),
@@ -112,7 +112,7 @@ public class PicturesControllerStatusOkTests {
         byteArrayOutputStream.close();
 
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        Mockito.doReturn(byteArrayOutputStream).when(pictureByteUtility).getPictureFragment(
+        Mockito.doReturn(byteArrayOutputStream).when(bitmapFileService).getPictureFragment(
                 Mockito.anyInt(),
                 Mockito.anyInt(),
                 Mockito.anyInt(),
@@ -138,7 +138,7 @@ public class PicturesControllerStatusOkTests {
     @Test
     public void givenId_whenDeletePicture_thenStatus200() throws Exception {
         given(picturesRepository.findById(Mockito.anyLong())).willReturn(Optional.of(picture));
-        given(pictureByteUtility.deletePicture(picture)).willReturn(true);
+        given(bitmapFileService.deletePicture(picture)).willReturn(true);
         mvc
                 .perform(delete("/chartas/{id}/", picture.getId()))
                 .andDo(print())

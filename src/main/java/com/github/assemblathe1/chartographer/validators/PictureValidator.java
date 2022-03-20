@@ -23,10 +23,24 @@ public class PictureValidator {
         List<String> errors = new ArrayList<>();
         checkIfValueLessThanZero(width, errors, "Width");
         checkIfValueLessThanZero(height, errors, "Height");
-        checkIfValueMoreThanMaxvalue(width, maxValidWidth, errors, "Width");
-        checkIfValueMoreThanMaxvalue(height, maxValidHeight, errors, "Height");
+        checkIfValueMoreThanMaxValue(width, maxValidWidth, errors, "Width");
+        checkIfValueMoreThanMaxValue(height, maxValidHeight, errors, "Height");
         checkIfFragmentNotCrossPicture(x, width, originalPictureWidth, errors, "x");
         checkIfFragmentNotCrossPicture(y, height, originalPictureHeight, errors, "y");
+
+        if (!errors.isEmpty()) throw new ValidationException(errors);
+    }
+
+    public void validate(Integer width,
+                         Integer height,
+                         Integer maxValidWidth,
+                         Integer maxValidHeight
+    ) {
+        List<String> errors = new ArrayList<>();
+        checkIfValueLessThanZero(width, errors, "Width");
+        checkIfValueLessThanZero(height, errors, "Height");
+        checkIfValueMoreThanMaxValue(width, maxValidWidth, errors, "Width");
+        checkIfValueMoreThanMaxValue(height, maxValidHeight, errors, "Height");
 
         if (!errors.isEmpty()) throw new ValidationException(errors);
     }
@@ -35,12 +49,11 @@ public class PictureValidator {
         if (value <= 0) errors.add(parameter + " can not be less than 0");
     }
 
-    private void checkIfValueMoreThanMaxvalue(Integer value, Integer maxValue, List<String> errors, String parameter) {
+    private void checkIfValueMoreThanMaxValue(Integer value, Integer maxValue, List<String> errors, String parameter) {
         if (value > maxValue) errors.add(parameter + " can not be more than " + maxValue + " .If you want to handle so BIG picture, increase limit in PictureService");
     }
 
     private void checkIfFragmentNotCrossPicture(Integer value, Integer fragmentSideSize, Integer pictureSideSize,  List<String> errors, String parameter) {
-        if (value == null || pictureSideSize == null) return;
         if (value + fragmentSideSize <= 0 || value >= pictureSideSize) errors.add("Fragment and papyrus do not cross by " + parameter);
     }
 }

@@ -1,4 +1,4 @@
-package com.github.assemblathe1.chartographer.utils;
+package com.github.assemblathe1.chartographer.services;
 
 import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.exceptions.WritingToDiskException;
@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 
 @Component
-public class PictureByteUtility {
+public class BitmapFileService {
     private static final int BMP_SIZE_HEADER = 54;                                      // total header length, 54 bytes
     //  private static final int BMP_SIZE_IMAGE_WIDTH = 4;                                  // size of image width field, 4 bytes
 //  private static final int BMP_SIZE_PAYLOAD_LENGTH = 4;                               // size of 'horizontal resolution' field, here: payload length, 4 bytes
@@ -150,8 +150,8 @@ public class PictureByteUtility {
     private long getAvailableInputStreamBuffer(int x, int y, int width, Picture picture, long inputStreamRowPadding) {
         return y < 0
                 ? x + width > picture.getWidth()
-                ? countAvailableBufferIfFragmentWidthMorePictureWidth(y, width)
-                : countAvailableBufferIfFragmentWidthMorePictureWidth(y, width) + inputStreamRowPadding * Math.abs(y)
+                    ? countAvailableBufferIfFragmentWidthMorePictureWidth(y, width)
+                    : countAvailableBufferIfFragmentWidthMorePictureWidth(y, width) + inputStreamRowPadding * Math.abs(y)
                 : 0;
     }
 
@@ -172,11 +172,11 @@ public class PictureByteUtility {
     private long getStartOffsetRafIfFragmentDoNotCrossAllPicture(int x, int y, int width, int height, Picture picture, long randomAccessFileRowPadding) {
         return x < 0
                 ? y + height > picture.getHeight()
-                ? 54L
-                : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding) - 3L * x
-                : (x + width <= picture.getWidth() && y + height > picture.getHeight())
-                ? 54 + 3L * x
-                : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding);
+                    ? 54L
+                    : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding) - 3L * x
+                : x + width <= picture.getWidth() && y + height > picture.getHeight()
+                    ? 54 + 3L * x
+                    : countDefaultStartOffsetRandomAccessFile(x, y, height, picture.getWidth(), picture.getHeight(), randomAccessFileRowPadding);
     }
 
     private long countAvailableBufferIfFragmentWidthMorePictureWidth(int y, int width) {

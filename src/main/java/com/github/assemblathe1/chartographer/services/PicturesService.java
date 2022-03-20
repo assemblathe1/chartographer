@@ -4,7 +4,6 @@ import com.github.assemblathe1.chartographer.entities.Picture;
 import com.github.assemblathe1.chartographer.exceptions.ResourceNotFoundException;
 import com.github.assemblathe1.chartographer.exceptions.WritingToDiskException;
 import com.github.assemblathe1.chartographer.repositories.PicturesRepository;
-import com.github.assemblathe1.chartographer.utils.PictureByteUtility;
 import com.github.assemblathe1.chartographer.utils.StartupArgumentsRunner;
 import com.github.assemblathe1.chartographer.validators.PictureValidator;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,7 @@ public class PicturesService {
     private final PicturesRepository picturesRepository;
     private final PictureValidator pictureValidator;
     private final StartupArgumentsRunner startupArgumentsRunner;
-    private final PictureByteUtility pictureByteUtility;
+    private final BitmapFileService bitmapFileService;
 
     @Transactional
     public Long createPicture(int width, int height) {
@@ -48,12 +47,11 @@ public class PicturesService {
         System.out.println(url);
         System.out.println("!!!   " + Path.of(url).toFile().getAbsolutePath());
 
-        pictureValidator.validate(null, null, width, height, maxPictureWidth, maxPictureHeight, null, null);
+        pictureValidator.validate(width, height, maxPictureWidth, maxPictureHeight);
         Picture savedPicture = picturesRepository.save(new Picture(url, width, height));
         try {
-            pictureByteUtility.createPicture(savedPicture.getWidth(), savedPicture.getHeight(), savedPicture.getUrl());
+            bitmapFileService.createPicture(savedPicture.getWidth(), savedPicture.getHeight(), savedPicture.getUrl());
         } catch (IOException e) {
-            picturesRepository.deleteById(savedPicture.getId());
             throw new WritingToDiskException("Internal Server Error");
         }
         return savedPicture.getId();
@@ -65,7 +63,7 @@ public class PicturesService {
         //TODO maxPictureWidth check
         pictureValidator.validate(x, y, width, height, maxPictureWidth, maxPictureHeight, picture.getWidth(), picture.getHeight());
         try {
-            pictureByteUtility.savePictureFragment(x, y, width, height, pictureFragment, picture);
+            bitmapFileService.savePictureFragment(x, y, width, height, pictureFragment, picture);
         } catch (IOException e) {
             throw new WritingToDiskException("Internal Server Error");
         }
@@ -76,7 +74,7 @@ public class PicturesService {
         pictureValidator.validate(x, y, width, height, maxFragmentWidth, maxFragmentHeight, picture.getWidth(), picture.getHeight());
         ByteArrayOutputStream byteArrayOutputStream;
         try {
-            byteArrayOutputStream = pictureByteUtility.getPictureFragment(x, y, width, height, picture);
+            byteArrayOutputStream = bitmapFileService.getPictureFragment(x, y, width, height, picture);
         } catch (IOException e) {
             throw new WritingToDiskException("Internal Server Error");
         }
@@ -85,7 +83,7 @@ public class PicturesService {
 
     public void deletePicture(String id) {
         Picture picture = findPictureById(id);
-        if (pictureByteUtility.deletePicture(picture)) picturesRepository.deleteById(Long.valueOf(id));
+        if (bitmapFileService.deletePicture(picture)) picturesRepository.deleteById(Long.valueOf(id));
     }
 
     public Picture findPictureById(String id) {

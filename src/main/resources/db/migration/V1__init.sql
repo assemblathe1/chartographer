@@ -8,9 +8,6 @@ create table if not exists pictures
     updated_at timestamp default current_timestamp
 );
 
--- insert into pictures (url, width, height)
--- values ('pictures\test.bmp', 200, 100);
-
 
 
 
