@@ -1,13 +1,10 @@
 package com.github.assemblathe1.chartographer.validators;
 
-
 import com.github.assemblathe1.chartographer.exceptions.ValidationException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-
-//TODO Validation correct input image type
 
 @Component
 public class PictureValidator {

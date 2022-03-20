@@ -42,11 +42,6 @@ public class PicturesService {
                 ? createBMPFilePath(picturesFolder.substring(1, picturesFolder.length() - 1))
                 : createBMPFilePath(System.getProperty("java.io.tmpdir") + "/pictures");
 
-        System.out.println(System.getProperty("user.dir"));
-        System.out.println(PicturesService.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-        System.out.println(url);
-        System.out.println("!!!   " + Path.of(url).toFile().getAbsolutePath());
-
         pictureValidator.validate(width, height, maxPictureWidth, maxPictureHeight);
         Picture savedPicture = picturesRepository.save(new Picture(url, width, height));
         try {
@@ -60,7 +55,6 @@ public class PicturesService {
     public void savePictureFragment(String id, int x, int y, int width, int height, MultipartFile pictureFragment) {
         Picture picture = findPictureById(id);
 
-        //TODO maxPictureWidth check
         pictureValidator.validate(x, y, width, height, maxPictureWidth, maxPictureHeight, picture.getWidth(), picture.getHeight());
         try {
             bitmapFileService.savePictureFragment(x, y, width, height, pictureFragment, picture);
@@ -95,7 +89,6 @@ public class PicturesService {
     private String createBMPFilePath(String savingFolder) {
         File defaultPicturesDirectory = new File(savingFolder);
         if (!defaultPicturesDirectory.exists()) defaultPicturesDirectory.mkdir();
-        System.out.println("createBMPFileDefaultPath " + defaultPicturesDirectory.getPath());
         return Path.of(defaultPicturesDirectory.getPath() + "/" + UUID.randomUUID() + ".bmp").toString();
     }
 }
